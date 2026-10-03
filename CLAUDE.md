@@ -18,7 +18,7 @@ Az eredmény *előszűrés*: nem helyettesíti a tulajdoni lapot és a helyi ép
 | Geometria | Turf.js (bbox, metszés), saját síkbeli függvények EOV-ban (`src/analysis/planar.ts`) | a Turf gömbi/WGS84 méter-számításai helyett **minden méteres számítás EOV-ban** |
 | Vetítés | proj4, EPSG:23700 (EOV) ↔ EPSG:4326 | |
 | Raszter | geotiff.js, COG range request, natív HTTP kliensen át (CORS) | |
-| Natív | Capacitor 8 + Geolocation, Camera, Filesystem, Share, Preferences, Network, App, SplashScreen, StatusBar, CapacitorHttp, @capacitor-community/sqlite | |
+| Natív | Capacitor 8 + Geolocation, Camera, Filesystem, Share, Preferences, Network, App, SplashScreen, SystemBars (core), CapacitorHttp, @capacitor-community/sqlite | |
 | PDF | jsPDF + beágyazott Barlow TTF (ő/ű miatt kötelező) | |
 | Teszt | Vitest | |
 | Lint | ESLint (typescript-eslint) + Prettier | |
@@ -30,7 +30,7 @@ src/
   config.ts            végpontok, attribúciók, User-Agent, alapértékek
   types.ts             közös domain-típusok (Parcel, AnalysisResult, …)
   state/               store (pub/sub), beállítások
-  map/                 MapLibre init, stílusok, rétegek, rajzolás (terra-draw), markerek
+  map/                 MapLibre init, stílusok, rétegek, saját csúcsszerkesztő, markerek
   analysis/            pipeline, planar geometria, EOV, DEM-feldolgozás (worker), pontozás
   services/            külső adatforrások egységes interfésszel (DataService<TReq,TRes>)
   demo/                demó mód: procedurális terep, rétegek, mintatelkek

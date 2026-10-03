@@ -76,4 +76,17 @@ az app kezelt hibaállapotot mutat („Nem elérhető adat”), hamis adatot soh
 - [x] export: GeoJSON (WGS84), GeoJSON (EOV, EPSG:23700), KML – elemzési összegzéssel, fotópontokkal, metszetvonallal
 - [x] megosztás: natív Share-lap (Android), böngészőben letöltés; export a Projektek menüből is
 - [x] tesztek: export visszaimportálással (területegyezés), KML XML-érvényesség, PDF-előállítás beágyazott betűvel
-## Fázis 7 – Csiszolás, ikon/splash, release APK, README 🔄
+## Fázis 7 – Csiszolás, ikon/splash, release APK, README ✅
+- [x] adaptív app ikon és splash (világos/sötét) az arculattal – SVG mesterfájlok: `assets/`
+- [x] Capacitor 8 SystemBars: safe-area CSS-változók, sávstílus téma és demó szerint
+- [x] Android vissza gomb (dialógus → szerkesztés → képernyő → panel → háttérbe)
+- [x] első indításkori üdvözlés módválasztással, globális hibakezelő, koppintással zárható üzenetek
+- [x] kódfelosztás: PDF, importálók, élő szolgáltatások lusta betöltése (fő csomag 2,1 → 1,36 MB)
+- [x] release APK a CI-ben (aláírás GitHub Secrets-ből; titkok nélkül aláíratlan) – ellenőrizve
+- [x] README: előfeltételek, build, emulátor, aláírt release, telepítés telefonra, hibaelhárítás
+- [x] 106 Vitest teszt, ESLint + Prettier tiszta
+
+## Döntésre vár
+- Release aláíró kulcs: a CI-titkok (`ANDROID_KEYSTORE_*`) megadása után aláírt release APK készül.
+- A `hu.teleklato.app` csomagnév végleges-e (Play Áruházhoz később nem módosítható).
+- Szükség esetén a GitHub Actions helyett helyi build: a fejlesztői konténerből a Google Maven nem érhető el.
