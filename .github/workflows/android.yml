@@ -11,7 +11,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  sources:
+    name: Adatforrások (próbahívás + Natura kivonat)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Próbahívások minden adatforrásra
+        run: npm run check:sources
+      - name: Natura 2000 kivonat (EEA)
+        continue-on-error: true
+        run: npm run data:natura
+      - name: Natura kivonat feltöltése
+        if: hashFiles('public/data/natura2000_hu.geojson') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: natura2000-hu
+          path: public/data/natura2000_hu.geojson
+
   build:
+    needs: sources
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -30,6 +55,13 @@ jobs:
 
       - name: Függőségek
         run: npm ci
+
+      - name: Natura kivonat letöltése (ha elkészült)
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: natura2000-hu
+          path: public/data
 
       - name: Lint
         run: npm run lint

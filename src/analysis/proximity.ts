@@ -46,7 +46,10 @@ function nearestLine(parcel: Ring[], feats: LineFeature[], radius: number): Prox
       };
     }
   }
-  best.crosses = feats.some((f) => f.line.length > 1 && lineIntersectsPolygon(f.line, parcel));
+  // földkábel nem „keresztező légvezeték”
+  best.crosses = feats.some(
+    (f) => f.kind !== 'cable' && f.line.length > 1 && lineIntersectsPolygon(f.line, parcel),
+  );
   return best;
 }
 

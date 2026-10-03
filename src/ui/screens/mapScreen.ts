@@ -23,6 +23,12 @@ import { isOnline } from '../../native/network';
 import { fmtArea, fmtLen } from '../../util/format';
 import { OVERALL_TITLE } from '../../analysis/scoring';
 import type { LngLat, Parcel } from '../../types';
+import { SearchBox } from '../components/searchBox';
+import { geocode, type GeocodeResult } from '../../services/geocode';
+import { PLACE_LABELS } from '../../demo/world';
+import { toWgs } from '../../analysis/eov';
+import { disableOrtho, enableOrtho } from '../../map/ortho';
+import { onNetworkChange } from '../../native/network';
 import type { Screen } from '../shell';
 
 export interface MapScreenHooks {
@@ -49,6 +55,8 @@ export class MapScreen implements Screen {
   private abort: AbortController | null = null;
   private styleToken = 0;
   readonly topBar: HTMLElement;
+  private offlineBanner: HTMLElement;
+  private search!: SearchBox;
   readonly controls: HTMLElement;
 
   constructor() {
@@ -60,6 +68,19 @@ export class MapScreen implements Screen {
       onDone: () => this.finishEditing(),
     });
     this.topBar = h('div', { class: 'map-top' });
+    this.offlineBanner = h(
+      'div',
+      {
+        class: 'banner warn hidden',
+        style: 'position:absolute;left:12px;right:12px;top:calc(var(--safe-top) + 58px);z-index:19',
+      },
+      svg(icons.wifiOff),
+      h(
+        'span',
+        null,
+        'Nincs hálózat. A demó mód, a mentett telkek és a gyorsítótárazott adatok elérhetők; az új élő lekérdezések kimaradnak.',
+      ),
+    );
     this.controls = h(
       'div',
       { class: 'map-controls' },
@@ -89,6 +110,7 @@ export class MapScreen implements Screen {
       h('div', { class: 'map-wrap' }, h('div', { class: 'map-fallback' }), this.mapEl),
       this.demoBadge,
       this.topBar,
+      this.offlineBanner,
       this.controls,
       this.toolbar.el,
       this.sheet.el,
@@ -117,8 +139,21 @@ export class MapScreen implements Screen {
       } else if (s.theme !== prev.theme) void this.refreshBaseStyle(false);
     });
     session.subscribe(() => this.renderSheet());
+    this.search = new SearchBox(
+      (q) => this.searchPlaces(q),
+      (r) => this.flyToResult(r),
+    );
+    this.topBar.append(this.search.el);
+    this.view.map.on('click', () => this.search.close());
+    onNetworkChange((online) =>
+      this.offlineBanner.classList.toggle('hidden', online || settings.get().demoMode),
+    );
+    settings.subscribe((s, prev) => {
+      if (s.orthoLayer !== prev.orthoLayer || s.demoMode !== prev.demoMode) void this.applyOrtho();
+    });
     this.renderSheet();
     await this.refreshBaseStyle(true);
+    void this.applyOrtho();
   }
 
   // ------------------------------------------------------------------ alaptérkép
@@ -392,6 +427,53 @@ export class MapScreen implements Screen {
     if (!p) return;
     const name = await promptDialog('Telek átnevezése', 'Név', p.name);
     if (name) updateParcel({ name });
+  }
+
+  // ------------------------------------------------------------------ keresés, ortofotó
+
+  private async searchPlaces(q: string): Promise<GeocodeResult[]> {
+    if (settings.get().demoMode) {
+      const needle = q.toLowerCase();
+      return PLACE_LABELS.filter((p) => p.text.toLowerCase().includes(needle)).map((p) => {
+        const [lon, lat] = toWgs(p.at);
+        return { label: `${p.text} (demó)`, lon, lat, bbox: null, kind: p.kind };
+      });
+    }
+    return geocode(q);
+  }
+
+  private flyToResult(r: GeocodeResult): void {
+    if (r.bbox) {
+      const [w, s, e, n] = r.bbox;
+      // nagy kiterjedésű találatnál (település) ne zoomoljon túl közel / túl távol
+      this.view.map.fitBounds(
+        [
+          [w, s],
+          [e, n],
+        ],
+        { padding: 60, maxZoom: 17.5, duration: 800 },
+      );
+    } else this.view.map.flyTo({ center: [r.lon, r.lat], zoom: 16 });
+  }
+
+  private async applyOrtho(): Promise<void> {
+    const s = settings.get();
+    if (!s.orthoLayer || s.demoMode) {
+      disableOrtho(this.view);
+      return;
+    }
+    try {
+      await enableOrtho(this.view);
+    } catch (err) {
+      console.warn(err);
+      disableOrtho(this.view);
+      settings.patch({ orthoLayer: false });
+      toast(
+        'Az ortofotó-szolgáltatás (Lechner) most nem érhető el, a réteget kikapcsoltam. Próbáld később, vagy használd a térképi alapréteget.',
+        'error',
+        6500,
+      );
+    }
   }
 
   // ------------------------------------------------------------------ rétegek
