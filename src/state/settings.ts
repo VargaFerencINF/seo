@@ -23,6 +23,8 @@ export interface Settings {
   /** a felhasználó látta-e már az engedély-magyarázatokat */
   explainedLocation: boolean;
   explainedCamera: boolean;
+  /** az első indításkori üdvözlő képernyő megjelent */
+  welcomed: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +39,7 @@ export const DEFAULT_SETTINGS: Settings = {
   orthoLayer: false,
   explainedLocation: false,
   explainedCamera: false,
+  welcomed: false,
 };
 
 const KEY = 'teleklato.settings.v1';

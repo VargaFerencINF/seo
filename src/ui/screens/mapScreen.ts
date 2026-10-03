@@ -17,7 +17,6 @@ import { DEMO_PARCELS, demoPolygon } from '../../demo/parcels';
 import { computeGeometry, validatePolygon } from '../../analysis/geometry';
 import { runAnalysis } from '../../analysis/pipeline';
 import { getProvider } from '../../analysis/providers';
-import { buildReport, reportFileName } from '../../report/pdf';
 import { saveAndShare } from '../../native/files';
 import { isOnline } from '../../native/network';
 import { fmtArea, fmtLen } from '../../util/format';
@@ -384,7 +383,7 @@ export class MapScreen implements Screen {
     try {
       const online = await isOnline();
       const result = await runAnalysis(p, {
-        provider: getProvider(s.demoMode),
+        provider: await getProvider(s.demoMode),
         rules: s.rules,
         online,
         pvLossPct: s.pvLossPct,
@@ -425,6 +424,7 @@ export class MapScreen implements Screen {
         p.photos.map((ph, i) => ({ lngLat: [ph.lon, ph.lat] as [number, number], label: String(i + 1) })),
       );
       this.fitParcel(p.geometry, false);
+      const { buildReport, reportFileName } = await import('../../report/pdf');
       const doc = await buildReport({
         parcel: p,
         analysis: p.analysis,

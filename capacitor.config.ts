@@ -12,6 +12,10 @@ const config: CapacitorConfig = {
     // A CapacitorHttp-t célzottan hívjuk (src/native/http.ts), nem patcheljük a globális fetch-et,
     // mert a MapLibre csempéi így a WebView-ban gyorsítótárazódnak.
     CapacitorHttp: { enabled: false },
+    SystemBars: {
+      insetsHandling: 'css',
+      initialViewportFitValueHint: 'cover',
+    },
     SplashScreen: {
       launchShowDuration: 600,
       backgroundColor: '#e7ece3',

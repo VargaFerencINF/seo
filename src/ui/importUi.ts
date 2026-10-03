@@ -1,7 +1,7 @@
 /** Import (fájl, megosztott fájl) és koordináta-bevitel felülete. */
 import { h } from './dom';
 import { dialog, toast } from './feedback';
-import { importText, ImportError } from '../import';
+import { ImportError } from '../import/types';
 import { parseCoordinates, type CoordSystem } from '../import/coords';
 import { polygonFromPoints } from '../analysis/geometry';
 import type { MapScreen } from './screens/mapScreen';
@@ -32,12 +32,13 @@ export class ImportUi {
       toast('A fájl túl nagy (20 MB felett). Exportáld csak a telekhatárt.', 'error', 6000);
       return;
     }
-    this.load(f.name, await f.text());
+    await this.load(f.name, await f.text());
   }
 
   /** Szöveges tartalom betöltése (fájlválasztóból vagy Android megosztásból) */
-  load(name: string, text: string): void {
+  async load(name: string, text: string): Promise<void> {
     try {
+      const { importText } = await import('../import');
       const r = importText(name, text);
       this.screen.loadGeometry(r.polygon, 'import', r.name ?? name.replace(/\.[^.]+$/, ''));
       toast(['Telek importálva.', ...r.notes].join(' '), 'info', 6000);

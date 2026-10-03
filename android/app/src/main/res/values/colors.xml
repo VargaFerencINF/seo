@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Teleklátó arculat: mélyzöld, földmérő-sárga kiemelés -->
+    <color name="colorPrimary">#2F5D43</color>
+    <color name="colorPrimaryDark">#1F3A2B</color>
+    <color name="colorAccent">#E8B710</color>
+</resources>

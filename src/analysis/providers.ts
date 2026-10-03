@@ -1,11 +1,15 @@
 import type { DataProvider } from './provider';
 import { createDemoProvider } from '../demo/provider';
-import { createLiveProvider } from '../services/liveProvider';
 
 let demo: DataProvider | null = null;
 let live: DataProvider | null = null;
 
-export function getProvider(demoMode: boolean): DataProvider {
+/** Az élő szolgáltató (geotiff, Overpass stb.) csak első használatkor töltődik be. */
+export async function getProvider(demoMode: boolean): Promise<DataProvider> {
   if (demoMode) return (demo ??= createDemoProvider());
-  return (live ??= createLiveProvider());
+  if (!live) {
+    const { createLiveProvider } = await import('../services/liveProvider');
+    live = createLiveProvider();
+  }
+  return live;
 }

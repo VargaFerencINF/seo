@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Adaptív ikon előtér: a generátor 16,7 %-os beljebb húzással a látható zónába helyezi -->
+  <g transform="translate(512 512) scale(0.95) translate(-530 -545)">
+    <polygon points="300,420 600,330 760,520 690,760 330,740" fill="#e8b710" fill-opacity="0.18" stroke="#e8b710" stroke-width="44" stroke-linejoin="round"/>
+    <g fill="#e8b710" stroke="#1f3a2b" stroke-width="16">
+      <circle cx="300" cy="420" r="40"/>
+      <circle cx="600" cy="330" r="40"/>
+      <circle cx="760" cy="520" r="40"/>
+      <circle cx="690" cy="760" r="40"/>
+      <circle cx="330" cy="740" r="40"/>
+    </g>
+  </g>
+</svg>

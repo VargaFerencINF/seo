@@ -286,6 +286,7 @@ export class SettingsScreen implements Screen {
                   rules: cloneRules(DEFAULT_RULES),
                   explainedCamera: s.explainedCamera,
                   explainedLocation: s.explainedLocation,
+                  welcomed: true,
                 });
             },
           },
