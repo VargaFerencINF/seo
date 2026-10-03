@@ -72,7 +72,7 @@ export async function discoverWmsLayer(baseUrl: string): Promise<string> {
     timeoutMs: 15000,
   });
   const names = parseWmsLayerNames(res.data);
-  const pick = names.find((n) => /ortho|orto|OI\./i.test(n)) ?? names[0];
+  const pick = names.find((n) => /ortho|orto|OI\./i.test(n) && !/polygon/i.test(n)) ?? names[0];
   if (!pick) throw new Error('A WMS szolgáltatás nem hirdet lekérhető réteget.');
   return pick;
 }

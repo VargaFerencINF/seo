@@ -110,8 +110,17 @@ beforeEach(() => {
         } as T,
       };
     if (u.includes('Natura2000Sites/MapServer?f=json'))
-      return { status: 200, headers: {}, data: { layers: [{ id: 0, name: 'Natura2000 sites' }] } as T };
-    if (/Natura2000Sites\/MapServer\/0\?f=json/.test(u))
+      return {
+        status: 200,
+        headers: {},
+        data: {
+          layers: [
+            { id: 0, name: 'Habitats Directive Sites (pSCI, SCI or SAC)' },
+            { id: 1, name: 'Birds Directive Sites (SPA)' },
+          ],
+        } as T,
+      };
+    if (/Natura2000Sites\/MapServer\/[01]\?f=json/.test(u))
       return { status: 200, headers: {}, data: { id: 0, geometryType: 'esriGeometryPolygon' } as T };
     if (u.includes('/query?') && u.endsWith('f=geojson')) {
       // a telek keleti 25 %-át lefedő Natura terület

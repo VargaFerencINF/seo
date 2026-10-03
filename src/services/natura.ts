@@ -69,39 +69,38 @@ interface ArcLayerInfo {
   subLayerIds?: number[] | null;
 }
 
-/** A Natura 2000 poligonréteg azonosítójának felderítése a MapServer leírásából */
-export async function discoverLayer(base: string, signal?: AbortSignal): Promise<number> {
-  const cached = await cacheGet<number>('natura:layer');
-  if (cached && !cached.expired) return cached.value;
+/**
+ * A Natura 2000 poligonrétegek felderítése a MapServer leírásából. Az EEA szolgáltatásban külön réteg
+ * a madárvédelmi (SPA), az élőhelyvédelmi (SCI/SAC) és a mindkettő alá tartozó terület – mindet lekérdezzük.
+ */
+export async function discoverLayers(base: string, signal?: AbortSignal): Promise<number[]> {
+  const cached = await cacheGet<number[]>('natura:layers');
+  if (cached && !cached.expired && Array.isArray(cached.value)) return cached.value;
   const root = await http<{ layers?: ArcLayerInfo[]; error?: { message?: string } }>({
     url: `${base}?f=json`,
     responseType: 'json',
     timeoutMs: 20000,
     ...(signal ? { signal } : {}),
   });
-  const layers = (root.data.layers ?? []).filter((l) => !l.subLayerIds?.length);
-  const ranked = [...layers].sort((a, b) => score(b.name) - score(a.name));
-  for (const l of ranked) {
+  const layers = (root.data.layers ?? []).filter((l) => !l.subLayerIds?.length && isSiteLayer(l.name));
+  const ids: number[] = [];
+  for (const l of layers) {
     const info = await http<ArcLayerInfo>({
       url: `${base}/${l.id}?f=json`,
       responseType: 'json',
       timeoutMs: 20000,
       ...(signal ? { signal } : {}),
     });
-    if (info.data.geometryType === 'esriGeometryPolygon') {
-      await cacheSet('natura:layer', l.id, 30 * 24 * 3600 * 1000);
-      return l.id;
-    }
+    if (info.data.geometryType === 'esriGeometryPolygon') ids.push(l.id);
   }
-  throw new Error('Az EEA szolgáltatásban nem található Natura 2000 poligonréteg.');
+  if (!ids.length) throw new Error('Az EEA szolgáltatásban nem található Natura 2000 poligonréteg.');
+  await cacheSet('natura:layers', ids, 30 * 24 * 3600 * 1000);
+  return ids;
 }
 
-function score(name: string): number {
-  let s = 0;
-  if (/natura/i.test(name)) s += 2;
-  if (/site/i.test(name)) s += 1;
-  if (/spa|sci|sac|bird|habitat/i.test(name)) s += 0.5;
-  return s;
+/** Natura 2000 területréteg-e (és nem pl. faj- vagy élőhely-előfordulási réteg) */
+export function isSiteLayer(name: string): boolean {
+  return /site|natura|spa|sci|sac|directive/i.test(name) && !/species|habitat types/i.test(name);
 }
 
 function pick(props: Record<string, unknown>, ...names: string[]): string {
@@ -200,8 +199,19 @@ export const naturaService: DataService<{ bbox: BboxWgs }, NaturaResult> = {
   ttlMs: 90 * 24 * 3600 * 1000,
   cacheKey: ({ bbox }) => bbox.map((v) => keyNum(v, 3)).join(','),
   async fetchLive({ bbox }, ctx) {
-    const layer = await discoverLayer(ENDPOINTS.naturaArcgis, ctx.signal);
-    return { collection: await queryArcgis(ENDPOINTS.naturaArcgis, layer, bbox, ctx.signal), origin: 'live' };
+    const layers = await discoverLayers(ENDPOINTS.naturaArcgis, ctx.signal);
+    const seen = new Set<string>();
+    const features: NaturaCollection['features'] = [];
+    for (const layer of layers) {
+      const fc = await queryArcgis(ENDPOINTS.naturaArcgis, layer, bbox, ctx.signal);
+      for (const f of fc.features) {
+        const key = f.properties.code || JSON.stringify(f.geometry).slice(0, 200);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        features.push(f);
+      }
+    }
+    return { collection: { type: 'FeatureCollection', features }, origin: 'live' };
   },
 };
 

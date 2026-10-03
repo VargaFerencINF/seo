@@ -6,7 +6,13 @@ import { readWindow, resetCogCache } from '../src/services/cog';
 import { copernicusTileName, copernicusTileUrl, demService, tilesForBbox, mosaic } from '../src/services/dem';
 import { buildQuery, parseOverpass, overpassService } from '../src/services/overpass';
 import { parsePvgis, pvgisUrl, pvgisService } from '../src/services/pvgis';
-import { esriRingsToGeoJson, normalizeProps, queryArcgis, discoverLayer } from '../src/services/natura';
+import {
+  esriRingsToGeoJson,
+  normalizeProps,
+  queryArcgis,
+  discoverLayers,
+  isSiteLayer,
+} from '../src/services/natura';
 import { parseNominatim, geocode } from '../src/services/geocode';
 import { runService, type DataService } from '../src/services/service';
 import { SOURCES } from '../src/config';
@@ -309,7 +315,9 @@ describe('Natura 2000 (EEA ArcGIS)', () => {
           headers: {},
           data: {
             layers: [
-              { id: 0, name: 'Species' },
+              { id: 0, name: 'Habitats Directive Sites (pSCI, SCI or SAC)' },
+              { id: 1, name: 'Birds Directive Sites (SPA)' },
+              { id: 2, name: 'Species occurrences' },
               { id: 3, name: 'Natura 2000 Sites' },
             ],
           },
@@ -320,12 +328,10 @@ describe('Natura 2000 (EEA ArcGIS)', () => {
           headers: {},
           data: { id: 3, name: 'Natura 2000 Sites', geometryType: 'esriGeometryPolygon' },
         };
-      if (/MapServer\/0\?f=json$/.test(req.url))
-        return {
-          status: 200,
-          headers: {},
-          data: { id: 0, name: 'Species', geometryType: 'esriGeometryPoint' },
-        };
+      if (/MapServer\/[01]\?f=json$/.test(req.url))
+        return { status: 200, headers: {}, data: { geometryType: 'esriGeometryPolygon' } };
+      if (/MapServer\/2\?f=json$/.test(req.url))
+        return { status: 200, headers: {}, data: { geometryType: 'esriGeometryPoint' } };
       if (/\/3\/query\?.*f=geojson$/.test(req.url))
         return {
           status: 200,
@@ -354,7 +360,9 @@ describe('Natura 2000 (EEA ArcGIS)', () => {
       throw new HttpError('http', 'HTTP 404', 404);
     });
     const base = 'https://x.test/arcgis/rest/services/ProtectedSites/Natura2000Sites/MapServer';
-    expect(await discoverLayer(base)).toBe(3);
+    expect(await discoverLayers(base)).toEqual([0, 1, 3]);
+    expect(isSiteLayer('Habitats and Birds Directive Sites')).toBe(true);
+    expect(isSiteLayer('Species occurrences')).toBe(false);
     const fc = await queryArcgis(base, 3, [19, 47, 19.2, 47.2]);
     expect(fc.features[0]!.properties.code).toBe('HUBN20001');
     const q = calls.find((c) => c.url.includes('/query?'))!;

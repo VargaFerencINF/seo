@@ -148,16 +148,33 @@ for (const year of ['2018', '2022']) {
     const xml = await res.text();
     const names = [...xml.matchAll(/<Layer[^>]*>\s*<Name>([^<]+)<\/Name>/g)].map((m) => m[1]);
     const srs = /EPSG:3857/.test(xml) ? 'EPSG:3857 ✓' : 'EPSG:3857 nincs';
+    const formats = [...xml.matchAll(/<Format>([^<]+)<\/Format>/g)]
+      .map((m) => m[1])
+      .filter((f) => f.startsWith('image/'));
     let tile = '';
-    if (names[0]) {
-      const t = await get(
-        `${base}?service=WMS&version=1.1.1&request=GetMap&layers=${encodeURIComponent(names[0])}&styles=&format=image/jpeg&srs=EPSG:3857&bbox=2153000,6041000,2153500,6041500&width=256&height=256`,
-      );
-      tile = `GetMap ${t.status} ${t.headers.get('content-type')} ${t.headers.get('content-length') ?? ''} B, CORS: ${cors(t)}`;
+    const layer = names.find((n) => !/polygon/i.test(n)) ?? names[0];
+    if (layer) {
+      for (const [ver, fmt, extra] of [
+        ['1.1.1', 'image/jpeg', `srs=EPSG:3857&bbox=2153000,6041000,2153500,6041500`],
+        ['1.1.1', 'image/png', `srs=EPSG:3857&bbox=2153000,6041000,2153500,6041500`],
+        ['1.3.0', 'image/jpeg', `crs=EPSG:3857&bbox=2153000,6041000,2153500,6041500`],
+        ['1.1.1', 'image/jpeg', `srs=EPSG:23700&bbox=665000,262000,665500,262500`],
+      ]) {
+        const t = await get(
+          `${base}?service=WMS&version=${ver}&request=GetMap&layers=${encodeURIComponent(layer)}&styles=&format=${encodeURIComponent(fmt)}&${extra}&width=256&height=256`,
+        );
+        const ct = t.headers.get('content-type') ?? '';
+        const body =
+          ct.includes('xml') || ct.includes('text')
+            ? (await t.text()).replace(/\s+/g, ' ').slice(0, 260)
+            : `${(await t.arrayBuffer()).byteLength} B`;
+        tile += ` [${ver} ${fmt} ${extra.split('&')[0]}: ${t.status} ${ct} ${body}]`;
+      }
+      tile += ` CORS: ${cors(await get(`${base}?service=WMS&request=GetCapabilities`))}`;
     }
     const fees = /<Fees>([^<]*)<\/Fees>/.exec(xml)?.[1] ?? '';
     const access = /<AccessConstraints>([^<]*)<\/AccessConstraints>/.exec(xml)?.[1] ?? '';
-    return `rétegek: ${names.join(', ')}; ${srs}; ${tile}; Fees: ${fees}; AccessConstraints: ${access}`;
+    return `rétegek: ${names.join(', ')}; ${srs}; formátumok: ${formats.join(', ')}; ${tile}; Fees: ${fees}; AccessConstraints: ${access}`;
   });
 }
 

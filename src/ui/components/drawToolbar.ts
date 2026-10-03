@@ -36,7 +36,7 @@ export class DrawToolbar {
     this.extra = h('div', { style: 'display:contents' });
     this.el = h(
       'div',
-      { class: 'draw-toolbar hidden', style: 'top: calc(var(--safe-top) + 48px)' },
+      { class: 'draw-toolbar hidden', style: 'top: calc(var(--safe-top) + var(--demo-h) + 8px)' },
       this.info,
       this.extra,
       this.undoBtn,

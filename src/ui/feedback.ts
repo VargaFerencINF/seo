@@ -13,6 +13,10 @@ export function toast(message: string, kind: 'info' | 'error' = 'info', ms = 380
   setTimeout(() => el.remove(), ms);
 }
 
+export function clearToasts(): void {
+  host?.replaceChildren();
+}
+
 export interface DialogOptions {
   title: string;
   body?: Node | string;

@@ -15,7 +15,8 @@ export const DEFAULT_RULES: RuleSet = {
   powerCrossingLamp: 'yellow',
   waterBufferM: r(50, 20),
   buildingM: r(200, 1000),
-  pvYield: r(1150, 1050),
+  // a terep síkjában számolt hozam (PVGIS): Magyarországon vízszintesen ~1040, déli lejtőn több
+  pvYield: r(1030, 950),
   northAspect: r(5, 12),
 };
 
@@ -32,7 +33,7 @@ export const RULE_PRESETS: RuleSet[] = [
     powerM: r(500, 2000),
     powerCrossingLamp: 'yellow',
     buildingM: r(5000, 10000, false),
-    pvYield: r(1180, 1100),
+    pvYield: r(1080, 1000),
     northAspect: r(3, 8),
   },
   {
@@ -45,7 +46,7 @@ export const RULE_PRESETS: RuleSet[] = [
     powerM: r(200, 600),
     powerCrossingLamp: 'red',
     buildingM: r(100, 400),
-    pvYield: r(1100, 1000, false),
+    pvYield: r(1000, 920, false),
   },
 ];
 

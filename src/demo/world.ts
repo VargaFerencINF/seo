@@ -233,11 +233,15 @@ export const PLACE_LABELS: { text: string; at: Eov; kind: 'place' | 'water' | 'a
   { text: 'Kilátó-domb', at: [701200, 256420], kind: 'area' },
 ];
 
-/** Szimulált PV-hozam (kWh/kWp/év) dőlés és PVGIS-azimut (0 = dél) alapján */
+/**
+ * Szimulált PV-hozam (kWh/kWp/év) dőlés és PVGIS-azimut (0 = dél) alapján.
+ * Kalibráció a PVGIS 5.3 (SARAH3, 14 % veszteség) Gödöllő környéki próbahívásaihoz:
+ * vízszintes ≈ 1040, déli 5° ≈ 1075, optimális (~37°, dél) ≈ 1230 kWh/kWp.
+ */
 export function simulatedPvYield(angleDeg: number, aspectPvgis: number): number {
-  const base = 1185; // vízszintes, magyar átlag körüli érték
+  const base = 1040;
   const a = (aspectPvgis * Math.PI) / 180;
-  const gain = 0.0062 * angleDeg * Math.cos(a) - 0.000085 * angleDeg * angleDeg;
+  const gain = 0.009893 * angleDeg * Math.cos(a) - 0.0001337 * angleDeg * angleDeg;
   return base * (1 + gain);
 }
 

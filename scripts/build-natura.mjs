@@ -26,7 +26,7 @@ const args = Object.fromEntries(
     .slice(2)
     .reduce((acc, v, i, a) => (v.startsWith('--') ? [...acc, [v.slice(2), a[i + 1]]] : acc), []),
 );
-const tolerance = Number(args.tolerance ?? 0.0001);
+const tolerance = Number(args.tolerance ?? 0.00015);
 const out = args.out ?? 'public/data/natura2000_hu.geojson';
 
 async function getJson(url) {
@@ -43,18 +43,30 @@ async function getJson(url) {
   }
 }
 
-async function findLayer() {
+/** Az összes Natura 2000 területréteg (SCI/SAC, SPA, mindkettő) */
+async function findLayers() {
   const root = await getJson(`${BASE}?f=json`);
-  const layers = (root.layers ?? []).filter((l) => !l.subLayerIds?.length);
-  layers.sort((a, b) => Number(/natura/i.test(b.name)) - Number(/natura/i.test(a.name)));
+  const layers = (root.layers ?? []).filter(
+    (l) =>
+      !l.subLayerIds?.length &&
+      /site|natura|spa|sci|sac|directive/i.test(l.name) &&
+      !/species|habitat types/i.test(l.name),
+  );
+  const out = [];
   for (const l of layers) {
     const info = await getJson(`${BASE}/${l.id}?f=json`);
     if (info.geometryType === 'esriGeometryPolygon') {
       console.log(`Réteg: ${l.id} – ${l.name} (max. ${info.maxRecordCount ?? '?'} rekord/kérés)`);
-      return { id: l.id, max: info.maxRecordCount ?? 1000 };
+      out.push({
+        id: l.id,
+        name: l.name,
+        max: info.maxRecordCount ?? 1000,
+        fields: (info.fields ?? []).map((f) => f.name),
+      });
     }
   }
-  throw new Error('Nem található Natura 2000 poligonréteg az EEA szolgáltatásban.');
+  if (!out.length) throw new Error('Nem található Natura 2000 poligonréteg az EEA szolgáltatásban.');
+  return out;
 }
 
 const pick = (props, ...names) => {
@@ -65,7 +77,7 @@ const pick = (props, ...names) => {
 
 async function queryTile(layer, bbox, depth = 0) {
   const p = new URLSearchParams({
-    where: '1=1',
+    where: layer.fields.includes('MS') ? "MS='HU'" : '1=1',
     geometry: bbox.join(','),
     geometryType: 'esriGeometryEnvelope',
     inSR: '4326',
@@ -98,29 +110,72 @@ async function queryTile(layer, bbox, depth = 0) {
   return feats;
 }
 
-const round = (c) => (typeof c[0] === 'number' ? c.map((v) => Math.round(v * 1e6) / 1e6) : c.map(round));
+/** Kerekítés után az ismétlődő pontok és a 4 pontnál rövidebb gyűrűk elhagyása */
+function cleanRing(ring) {
+  const out = [];
+  for (const c of ring) {
+    const r = [Math.round(c[0] * 1e6) / 1e6, Math.round(c[1] * 1e6) / 1e6];
+    const prev = out[out.length - 1];
+    if (!prev || prev[0] !== r[0] || prev[1] !== r[1]) out.push(r);
+  }
+  if (out.length && (out[0][0] !== out[out.length - 1][0] || out[0][1] !== out[out.length - 1][1]))
+    out.push(out[0]);
+  return out.length >= 4 ? out : null;
+}
+
+function cleanGeometry(g) {
+  const polys = (g.type === 'Polygon' ? [g.coordinates] : g.coordinates)
+    .map((poly) => {
+      const rings = poly.map(cleanRing);
+      return rings[0] ? rings.filter(Boolean) : null;
+    })
+    .filter(Boolean);
+  if (!polys.length) return null;
+  return polys.length === 1
+    ? { type: 'Polygon', coordinates: polys[0] }
+    : { type: 'MultiPolygon', coordinates: polys };
+}
+
+function simplified(f) {
+  try {
+    return cleanGeometry(simplify(f, { tolerance, highQuality: false, mutate: false }).geometry);
+  } catch {
+    return cleanGeometry(f.geometry); // degenerált egyszerűsítés: az eredeti (szerveroldalon általánosított) geometria
+  }
+}
 
 async function main() {
-  const layer = await findLayer();
-  const raw = await queryTile(layer, HU_BBOX);
+  const layers = await findLayers();
   const byCode = new Map();
-  for (const f of raw) {
-    const code = pick(f.properties, 'sitecode', 'site_code');
-    if (!code.startsWith('HU') || !f.geometry) continue;
-    if (!byCode.has(code)) byCode.set(code, f);
+  for (const layer of layers) {
+    const raw = await queryTile(layer, HU_BBOX);
+    console.log(`  ${layer.name}: ${raw.length} objektum`);
+    for (const f of raw) {
+      const code = pick(f.properties, 'sitecode', 'site_code');
+      if (!code.startsWith('HU') || !f.geometry) continue;
+      if (!byCode.has(code)) byCode.set(code, f);
+    }
   }
-  const features = [...byCode.values()].map((f) => {
-    const g = simplify(f, { tolerance, highQuality: false, mutate: false }).geometry;
-    return {
-      type: 'Feature',
-      properties: {
-        code: pick(f.properties, 'sitecode', 'site_code'),
-        name: pick(f.properties, 'sitename', 'site_name'),
-        type: pick(f.properties, 'sitetype', 'site_type'),
-      },
-      geometry: { type: g.type, coordinates: round(g.coordinates) },
-    };
-  });
+  let dropped = 0;
+  const features = [...byCode.values()]
+    .map((f) => {
+      const geometry = simplified(f);
+      if (!geometry) {
+        dropped++;
+        return null;
+      }
+      return {
+        type: 'Feature',
+        properties: {
+          code: pick(f.properties, 'sitecode', 'site_code'),
+          name: pick(f.properties, 'sitename', 'site_name'),
+          type: pick(f.properties, 'sitetype', 'site_type'),
+        },
+        geometry,
+      };
+    })
+    .filter(Boolean);
+  if (dropped) console.log(`  ${dropped} degenerált geometria kihagyva`);
   const fc = {
     type: 'FeatureCollection',
     metadata: {

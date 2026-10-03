@@ -493,20 +493,28 @@ button:focus-visible {
 }
 .demo-badge {
   position: absolute;
-  top: calc(var(--safe-top) + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 25;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 26;
+  padding-top: var(--safe-top);
+  height: calc(var(--safe-top) + var(--demo-h));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
   background: var(--c-demo);
   color: #fff;
-  font: 700 var(--fs-xs) / 1 var(--font-head);
+  font: 700 var(--fs-xs) / 24px var(--font-head);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 7px 12px;
-  border-radius: 999px;
-  box-shadow: var(--shadow-1);
   pointer-events: none;
   white-space: nowrap;
+}
+:root {
+  --demo-h: 0px;
+}
+.is-demo {
+  --demo-h: 24px;
 }
 .toast-host {
   position: fixed;

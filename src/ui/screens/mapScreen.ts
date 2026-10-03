@@ -8,7 +8,7 @@ import { ParcelLayers } from '../../map/parcelLayers';
 import { fallbackStyle, loadLiveStyle } from '../../map/styles';
 import { settings, isDarkTheme } from '../../state/settings';
 import { session, newParcel, updateParcel, type MapMode } from '../../state/session';
-import { confirmDialog, dialog, promptDialog, toast } from '../feedback';
+import { clearToasts, confirmDialog, dialog, promptDialog, toast } from '../feedback';
 import { BottomSheet } from '../components/sheet';
 import { DrawToolbar } from '../components/drawToolbar';
 import { renderProgress, renderResults, lampEl } from '../components/results';
@@ -61,7 +61,7 @@ export class MapScreen implements Screen {
 
   constructor() {
     this.mapEl = h('div', { id: 'map', role: 'region', 'aria-label': 'Térkép' });
-    this.demoBadge = h('div', { class: 'demo-badge hidden' }, 'Demó · szimulált adatok');
+    this.demoBadge = h('div', { class: 'demo-badge hidden' }, 'Demó mód · szimulált adatok');
     this.toolbar = new DrawToolbar({
       onUndo: () => this.editor.undo(),
       onCancel: () => this.cancelEditing(),
@@ -72,7 +72,8 @@ export class MapScreen implements Screen {
       'div',
       {
         class: 'banner warn hidden',
-        style: 'position:absolute;left:12px;right:12px;top:calc(var(--safe-top) + 58px);z-index:19',
+        style:
+          'position:absolute;left:12px;right:12px;top:calc(var(--safe-top) + var(--demo-h) + 62px);z-index:19',
       },
       svg(icons.wifiOff),
       h(
@@ -163,8 +164,10 @@ export class MapScreen implements Screen {
     const { demoMode } = settings.get();
     const dark = isDarkTheme();
     this.demoBadge.classList.toggle('hidden', !demoMode);
+    this.el.classList.toggle('is-demo', demoMode);
     this.demoLabels.hide();
     if (demoMode) {
+      clearToasts();
       try {
         const style = await buildDemoStyle(dark);
         if (token !== this.styleToken) return;
