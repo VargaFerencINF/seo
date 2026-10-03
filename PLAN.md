@@ -69,5 +69,11 @@ az app kezelt hibaállapotot mutat („Nem elérhető adat”), hamis adatot soh
 - [x] szabályváltozáskor a nyitott és a megnyitott mentett telkek azonnal újrapontozódnak (hálózat nélkül)
 - [x] riport fejléce: cégnév, logó; GPS- és PV-paraméterek; gyorsítótár ürítése; adatforrások és licencek
 - [x] javítva: a panel fejlécének gombjai (pointer capture), a félig nyitott panel tartalma görgethető
-## Fázis 6 – PDF riport, export (GeoJSON/KML), Share 🔄
-## Fázis 7 – Csiszolás, ikon/splash, release APK, README ⏳
+## Fázis 6 – PDF riport, export (GeoJSON/KML), Share ✅
+- [x] PDF: fejléc cégnévvel és logóval, DEMÓ jelölés és vízjel, fekvő térképkép méretléccel, északjellel és számozott
+      fotópontokkal, összesített ítélet, mutatótáblázat, lámpák indoklással, metszetdiagram(ok), részletek, kimaradt lépések,
+      töréspontok EOV-ban, terepi fotók, adatforrások, jogi nyilatkozat, oldalszámozás
+- [x] export: GeoJSON (WGS84), GeoJSON (EOV, EPSG:23700), KML – elemzési összegzéssel, fotópontokkal, metszetvonallal
+- [x] megosztás: natív Share-lap (Android), böngészőben letöltés; export a Projektek menüből is
+- [x] tesztek: export visszaimportálással (területegyezés), KML XML-érvényesség, PDF-előállítás beágyazott betűvel
+## Fázis 7 – Csiszolás, ikon/splash, release APK, README 🔄

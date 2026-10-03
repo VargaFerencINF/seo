@@ -31,6 +31,7 @@ import { disableOrtho, enableOrtho } from '../../map/ortho';
 import { onNetworkChange } from '../../native/network';
 import type { Screen } from '../shell';
 import { rescore } from '../../analysis/rescore';
+import { shareMenu } from '../shareMenu';
 
 export interface MapScreenHooks {
   /** további „új telek” műveletek (bejárás, import, koordináta) – a 4. fázis tölti fel */
@@ -418,7 +419,11 @@ export class MapScreen implements Screen {
     try {
       const b = new LngLatBounds();
       for (const c of p.geometry.coordinates[0]!) b.extend(c as [number, number]);
-      const snap = await this.view.snapshotAround(b);
+      const snap = await this.view.snapshotAround(
+        b,
+        1.6,
+        p.photos.map((ph, i) => ({ lngLat: [ph.lon, ph.lat] as [number, number], label: String(i + 1) })),
+      );
       this.fitParcel(p.geometry, false);
       const doc = await buildReport({
         parcel: p,
@@ -438,6 +443,11 @@ export class MapScreen implements Screen {
         6000,
       );
     }
+  }
+
+  async share(): Promise<void> {
+    const p = session.get().parcel;
+    if (p) await shareMenu(p, () => this.exportPdf());
   }
 
   private async rename(): Promise<void> {
@@ -676,6 +686,7 @@ export class MapScreen implements Screen {
             saved ? 'Mentve' : 'Mentés',
           )
         : null,
+      h('button', { class: 'btn', onclick: () => void this.share() }, svg(icons.share), 'Megosztás'),
     );
     const secondary = h(
       'div',

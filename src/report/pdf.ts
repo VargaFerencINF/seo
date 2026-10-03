@@ -22,6 +22,7 @@ import {
   fmtWgs,
 } from '../util/format';
 import { niceStep } from '../ui/components/profileChart';
+import { toEov } from '../analysis/eov';
 
 export interface ReportOptions {
   parcel: Parcel;
@@ -55,6 +56,11 @@ const LAMP_RGB: Record<Lamp, [number, number, number]> = {
 };
 
 let fontCache: Record<string, string> | null = null;
+
+/** Teszteléshez: a betűfájlok base64 tartalmának közvetlen megadása */
+export function setFontData(data: Record<string, string>): void {
+  fontCache = data;
+}
 
 async function toBase64(url: string): Promise<string> {
   const buf = await (await fetch(url)).arrayBuffer();
@@ -366,12 +372,47 @@ export async function buildReport(opts: ReportOptions): Promise<jsPDF> {
     w.kv(missing.map((s) => [s.label, s.message ?? 'Nem elérhető adat'] as [string, string]));
   }
 
+  // ---------------- töréspontok EOV-ban (földmérőknek)
+  const ring = opts.parcel.geometry.coordinates[0] ?? [];
+  const verts = ring.slice(
+    0,
+    ring.length > 1 && ring[0]![0] === ring[ring.length - 1]![0] && ring[0]![1] === ring[ring.length - 1]![1]
+      ? -1
+      : undefined,
+  );
+  if (verts.length && verts.length <= 60) {
+    w.h2('Töréspontok (EOV, EPSG:23700)');
+    const colW = CW / 2;
+    const rowsPerCol = Math.ceil(verts.length / 2);
+    w.ensure(Math.min(rowsPerCol, 30) * 4.6 + 6);
+    w.font('semi', 8, C.ink2);
+    for (const c of [0, 1]) {
+      if (c === 1 && verts.length < 2) break;
+      doc.text('Pont', M + c * colW, w.y + 3);
+      doc.text('Y (kelet) [m]', M + c * colW + 12, w.y + 3);
+      doc.text('X (észak) [m]', M + c * colW + 44, w.y + 3);
+    }
+    w.y += 5;
+    const startY = w.y;
+    verts.forEach((v, i) => {
+      const [y, x] = toEov([v[0]!, v[1]!]);
+      const c = i < rowsPerCol ? 0 : 1;
+      const r = c === 0 ? i : i - rowsPerCol;
+      const yy = startY + r * 4.4;
+      w.font('body', 8.5);
+      doc.text(String(i + 1), M + c * colW, yy + 3);
+      doc.text(fmtNum(y, 2), M + c * colW + 12, yy + 3);
+      doc.text(fmtNum(x, 2), M + c * colW + 44, yy + 3);
+    });
+    w.y = startY + rowsPerCol * 4.4 + 4;
+  }
+
   // ---------------- fotók
   if (opts.parcel.photos.length) {
     w.h2('Terepi fotók');
     const colW = (CW - 6) / 3;
     let col = 0;
-    for (const ph of opts.parcel.photos) {
+    for (const [idx, ph] of opts.parcel.photos.entries()) {
       if (col === 0) w.ensure(colW * 0.75 + 12);
       const x = M + col * (colW + 3);
       try {
@@ -382,7 +423,7 @@ export async function buildReport(opts: ReportOptions): Promise<jsPDF> {
       w.font('body', 7, C.ink2);
       doc.text(
         doc.splitTextToSize(
-          `${fmtDate(ph.createdAt)} · ${ph.lat.toFixed(5)}, ${ph.lon.toFixed(5)}${ph.headingDeg !== null ? ` · irány ${Math.round(ph.headingDeg)}°` : ''}${ph.note ? ` · ${ph.note}` : ''}`,
+          `${idx + 1}. ${fmtDate(ph.createdAt)} · ${ph.lat.toFixed(5)}, ${ph.lon.toFixed(5)}${ph.headingDeg !== null ? ` · irány ${Math.round(ph.headingDeg)}°` : ''}${ph.note ? ` · ${ph.note}` : ''}`,
           colW,
         ) as string[],
         x,

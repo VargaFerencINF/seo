@@ -86,6 +86,12 @@ async function start(): Promise<void> {
     shell.show('map');
     mapScreen.openParcel(p, true);
   };
+  projectsScreen.handlers.exportParcel = (p) => {
+    // a PDF-hez térképkép kell, ezért a telket megnyitjuk a térképen
+    shell.show('map');
+    mapScreen.openParcel(p, true);
+    setTimeout(() => void mapScreen.share(), 700);
+  };
   void refreshProjects();
   // szabályváltozáskor a nyitott telek azonnal újrapontozódik
   settings.subscribe((s, prev) => {

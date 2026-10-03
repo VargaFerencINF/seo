@@ -115,7 +115,11 @@ export class MapView {
    * Fekvő tájolású térképkép a telek köré (riporthoz). A telket egy középre igazított, 16:10-es
    * keretbe illeszti, megvárja a csempéket, majd kivágja a keretet a canvasból.
    */
-  async snapshotAround(bounds: maplibregl.LngLatBounds, aspect = 1.6): Promise<MapSnapshot> {
+  async snapshotAround(
+    bounds: maplibregl.LngLatBounds,
+    aspect = 1.6,
+    points: { lngLat: [number, number]; label: string }[] = [],
+  ): Promise<MapSnapshot> {
     const map = this.map;
     const canvas = map.getCanvas();
     const cw = map.getContainer().clientWidth;
@@ -147,6 +151,26 @@ export class MapView {
     out.height = Math.round(boxH * ratio);
     const ctx = out.getContext('2d')!;
     ctx.drawImage(canvas, 0, Math.round(top * ratio), out.width, out.height, 0, 0, out.width, out.height);
+    // HTML-jelölők (pl. fotók) nincsenek a canvasban: számozott pontként rárajzoljuk
+    for (const pt of points) {
+      const px = map.project(pt.lngLat);
+      const x = px.x * ratio;
+      const y = (px.y - top) * ratio;
+      if (x < 0 || y < 0 || x > out.width || y > out.height) continue;
+      const r = 11 * ratio;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fillStyle = '#e8b710';
+      ctx.fill();
+      ctx.lineWidth = 2.5 * ratio;
+      ctx.strokeStyle = '#1f3a2b';
+      ctx.stroke();
+      ctx.fillStyle = '#1f3a2b';
+      ctx.font = `700 ${12 * ratio}px Barlow, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(pt.label, x, y + 0.5 * ratio);
+    }
     const center = map.getCenter();
     // MapLibre: 512 px-es csempék
     const mpp = (40075016.686 * Math.cos((center.lat * Math.PI) / 180)) / (512 * 2 ** map.getZoom());

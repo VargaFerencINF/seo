@@ -27,7 +27,8 @@ export function clearToasts(): void {
 
 export interface DialogOptions {
   title: string;
-  body?: Node | string;
+  /** tartalom; függvény esetén a `close` hívásával a törzsből is zárható */
+  body?: Node | string | ((close: (value: string) => void) => Node);
   icon?: string;
   actions: { label: string; kind?: 'primary' | 'accent' | 'danger' | 'ghost'; value: string }[];
   dismissValue?: string;
@@ -49,7 +50,11 @@ export function dialog(opts: DialogOptions): Promise<string> {
       { class: 'dialog', role: 'dialog', 'aria-modal': 'true', 'aria-label': opts.title },
       opts.icon ? svg(opts.icon, 'dialog-icon') : null,
       h('h2', null, opts.title),
-      typeof opts.body === 'string' ? h('p', null, opts.body) : (opts.body ?? null),
+      typeof opts.body === 'string'
+        ? h('p', null, opts.body)
+        : typeof opts.body === 'function'
+          ? opts.body((v) => close(v))
+          : (opts.body ?? null),
       h(
         'div',
         { class: 'dialog-actions' },
