@@ -30,6 +30,7 @@ import { toWgs } from '../../analysis/eov';
 import { disableOrtho, enableOrtho } from '../../map/ortho';
 import { onNetworkChange } from '../../native/network';
 import type { Screen } from '../shell';
+import { rescore } from '../../analysis/rescore';
 
 export interface MapScreenHooks {
   /** további „új telek” műveletek (bejárás, import, koordináta) – a 4. fázis tölti fel */
@@ -228,7 +229,9 @@ export class MapScreen implements Screen {
     session.patch({ mode });
   }
 
-  openParcel(p: Parcel, saved = false): void {
+  openParcel(input: Parcel, saved = false): void {
+    // a tárolt elemzést az aktuális szabályrendszerrel pontozzuk újra
+    const p = input.analysis ? { ...input, analysis: rescore(input.analysis, settings.get().rules) } : input;
     if (p.mode === 'demo' && !settings.get().demoMode) settings.patch({ demoMode: true });
     if (p.mode === 'live' && settings.get().demoMode) settings.patch({ demoMode: false });
     this.abort?.abort();

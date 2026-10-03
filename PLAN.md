@@ -59,6 +59,15 @@ az app kezelt hibaállapotot mutat („Nem elérhető adat”), hamis adatot soh
 - [x] Android megosztás/megnyitás intent (saját `SharedFilePlugin`, GeoJSON/KML/DXF MIME-típusok)
 - [x] koordináta-bevitel: WGS84 (tizedes / fok-perc-másodperc) vagy EOV, sorrend-felismerés; 1 pont → odaugrás
 - [x] tesztek: koordináta-parser, GeoJSON/KML/DXF import, GPS-segédfüggvények
-## Fázis 5 – Projektek (SQLite), összehasonlítás, szerkeszthető szabályok 🔄
-## Fázis 6 – PDF riport, export (GeoJSON/KML), Share ⏳
+## Fázis 5 – Projektek (SQLite), összehasonlítás, szerkeszthető szabályok ✅
+- [x] tárolás: SQLite (@capacitor-community/sqlite) Androidon, IndexedDB böngészőben, közös repository-interfész
+- [x] mentés névvel, megjegyzéssel, címkékkel; geometria, elemzés, fotók, metszetvonal, dátumok
+- [x] Projektek: lista (lámpa, terület, dátum, fotók, címkék), ékezetfüggetlen keresés, szerkesztés, törlés megerősítéssel
+- [x] 2–3 telek összehasonlítása: mutatók + szempontonkénti lámpák, legjobb érték kiemelése
+- [x] Beállítások: szerkeszthető küszöbök (11 szempont, be/ki), profilok (Általános, Napelempark, Lakóépület),
+      JSON export/import (cég saját szabályrendszere), légvezeték-keresztezés lámpája
+- [x] szabályváltozáskor a nyitott és a megnyitott mentett telkek azonnal újrapontozódnak (hálózat nélkül)
+- [x] riport fejléce: cégnév, logó; GPS- és PV-paraméterek; gyorsítótár ürítése; adatforrások és licencek
+- [x] javítva: a panel fejlécének gombjai (pointer capture), a félig nyitott panel tartalma görgethető
+## Fázis 6 – PDF riport, export (GeoJSON/KML), Share 🔄
 ## Fázis 7 – Csiszolás, ikon/splash, release APK, README ⏳

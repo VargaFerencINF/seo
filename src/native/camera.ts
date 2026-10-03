@@ -17,7 +17,11 @@ export async function makeThumb(blob: Blob, max = 480, quality = 0.72): Promise<
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(bmp.width * scale);
   canvas.height = Math.round(bmp.height * scale);
-  canvas.getContext('2d')!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+  const ctx = canvas.getContext('2d')!;
+  // a JPEG-nek nincs átlátszósága: fehér háttér (pl. átlátszó PNG logónál)
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
   bmp.close();
   return canvas.toDataURL('image/jpeg', quality);
 }

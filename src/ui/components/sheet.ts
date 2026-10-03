@@ -43,7 +43,7 @@ export class BottomSheet {
   setState(s: SheetState): void {
     this._state = s;
     this.el.dataset.state = s;
-    this.el.style.transform = '';
+    this.el.style.height = '';
     for (const fn of this.listeners) fn(s);
   }
 
@@ -57,41 +57,39 @@ export class BottomSheet {
 
   private bindDrag(): void {
     let startY = 0;
-    let startOffset = 0;
+    let startH = 0;
     let dragging = false;
     let moved = false;
-    const offsetOf = (): number => {
-      const m = new DOMMatrixReadOnly(getComputedStyle(this.el).transform);
-      return m.m42;
-    };
     this.handle.addEventListener('pointerdown', (e) => {
+      // a fejléc gombjai (átnevezés, bezárás) ne indítsanak húzást – különben a pointer-capture elnyeli a kattintást
+      if ((e.target as Element).closest('button, a, input, select, textarea')) return;
       dragging = true;
       moved = false;
       startY = e.clientY;
-      startOffset = offsetOf();
-      this.el.classList.add('dragging');
+      startH = this.el.getBoundingClientRect().height;
       this.handle.setPointerCapture(e.pointerId);
     });
     this.handle.addEventListener('pointermove', (e) => {
       if (!dragging) return;
       const dy = e.clientY - startY;
-      if (Math.abs(dy) > 4) moved = true;
-      const y = Math.max(0, startOffset + dy);
-      this.el.style.transform = `translateY(${y}px)`;
+      if (!moved && Math.abs(dy) < 6) return;
+      if (!moved) this.el.classList.add('dragging');
+      moved = true;
+      const max = (this.el.parentElement?.clientHeight ?? window.innerHeight) - 8;
+      this.el.style.height = `${Math.max(60, Math.min(max, startH - dy))}px`;
     });
-    const end = (e: PointerEvent) => {
+    const end = () => {
       if (!dragging) return;
       dragging = false;
       this.el.classList.remove('dragging');
       if (!moved) {
-        this.el.style.transform = '';
         this.cycle();
         return;
       }
-      const hgt = this.el.getBoundingClientRect().height;
-      const y = Math.max(0, startOffset + (e.clientY - startY));
-      const frac = y / hgt; // 0 = teljes, 1 = rejtett
-      this.setState(frac < 0.25 ? 'full' : frac < 0.7 ? 'half' : 'peek');
+      const container = this.el.parentElement?.clientHeight ?? window.innerHeight;
+      const frac = this.el.getBoundingClientRect().height / container;
+      this.el.style.height = '';
+      this.setState(frac > 0.72 ? 'full' : frac > 0.32 ? 'half' : 'peek');
     };
     this.handle.addEventListener('pointerup', end);
     this.handle.addEventListener('pointercancel', end);

@@ -21,6 +21,9 @@ import { locateButton } from './ui/locate';
 import { listenSharedFiles } from './native/sharedFile';
 import { session } from './state/session';
 import { toast } from './ui/feedback';
+import { loadProject, refreshProjects, saveProject } from './state/projects';
+import { editParcelMeta } from './ui/components/parcelEdit';
+import { rescore } from './analysis/rescore';
 
 async function start(): Promise<void> {
   await loadSettings();
@@ -39,7 +42,8 @@ async function start(): Promise<void> {
   const shell = new Shell(root);
   const mapScreen = new MapScreen();
   shell.register(mapScreen);
-  shell.register(new ProjectsScreen());
+  const projectsScreen = new ProjectsScreen();
+  shell.register(projectsScreen);
   shell.register(new SettingsScreen());
   shell.show('map');
   await mapScreen.mount();
@@ -57,6 +61,38 @@ async function start(): Promise<void> {
   mapScreen.parcelExtraActions.push({ label: 'Fotó', icon: icons.camera, run: () => void photos.take() });
   mapScreen.hooks.photoStrip = () => photos.strip();
   mapScreen.controls.append(locateButton(mapScreen.view, position, () => session.get().mode === 'walking'));
+  // ---- 5. fázis: projektek
+  mapScreen.hooks.saveParcel = async (p) => {
+    let parcel = p;
+    const isNew = !(await loadProject(p.id));
+    if (isNew) {
+      const meta = await editParcelMeta({ name: p.name, note: p.note, tags: p.tags }, 'Telek mentése');
+      if (!meta) return;
+      parcel = { ...p, ...meta, updatedAt: new Date().toISOString() };
+    }
+    try {
+      await saveProject(parcel);
+      session.patch({ parcel, saved: true });
+      toast(isNew ? 'Telek mentve a Projektek közé.' : 'Változások mentve.');
+    } catch (err) {
+      toast(
+        `A mentés nem sikerült: ${err instanceof Error ? err.message : String(err)}. Ellenőrizd a szabad tárhelyet.`,
+        'error',
+        7000,
+      );
+    }
+  };
+  projectsScreen.handlers.open = (p) => {
+    shell.show('map');
+    mapScreen.openParcel(p, true);
+  };
+  void refreshProjects();
+  // szabályváltozáskor a nyitott telek azonnal újrapontozódik
+  settings.subscribe((s, prev) => {
+    const p = session.get().parcel;
+    if (s.rules !== prev.rules && p?.analysis)
+      session.patch({ parcel: { ...p, analysis: rescore(p.analysis, s.rules) } });
+  });
   mapScreen.renderSheet();
   void listenSharedFiles((f) => {
     shell.show('map');
