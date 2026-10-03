@@ -55,6 +55,8 @@ async function start(): Promise<void> {
   shell.register(projectsScreen);
   shell.register(new SettingsScreen());
   shell.show('map');
+  // első indításkor előbb a módválasztás, hogy demóban ne próbálkozzunk élő alaptérképpel
+  await welcome();
   await mapScreen.mount();
 
   // ---- 4. fázis: terepi funkciók
@@ -132,7 +134,6 @@ async function start(): Promise<void> {
       return true;
     },
   ]);
-  void welcome();
   // szabályváltozáskor a nyitott telek azonnal újrapontozódik
   settings.subscribe((s, prev) => {
     const p = session.get().parcel;
