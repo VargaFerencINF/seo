@@ -98,6 +98,8 @@ jobs:
     if: always() && (github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      contents: write
     env:
       HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
@@ -143,3 +145,21 @@ jobs:
           name: teleklato-release-apk
           path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
+      - name: Telepíthető (debug) APK a GitHub Release-hez
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: android
+        run: |
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk "../teleklato-${GITHUB_REF_NAME}-debug.apk"
+          if [ -f app/build/outputs/apk/release/app-release.apk ]; then cp app/build/outputs/apk/release/app-release.apk "../teleklato-${GITHUB_REF_NAME}.apk"; fi
+      - name: GitHub Release (letölthető APK)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Teleklátó ${{ github.ref_name }}
+          body: |
+            Telepítés: töltsd le a `teleklato-${{ github.ref_name }}-debug.apk` fájlt a telefonon, nyisd meg,
+            és engedélyezd az „ismeretlen forrásból” telepítést (részletek: README.md).
+            Aláírt release APK csak a keystore GitHub Secretsben való megadása után kerül ide.
+          files: teleklato-*.apk
+          fail_on_unmatched_files: true
