@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Csak az app saját könyvtárai oszthatók meg (riport, export, kamera ideiglenes fájlja).
+     A sablon teljes külső tárhelyet megosztó bejegyzését szándékosan elhagytuk. -->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
-    <cache-path name="my_cache_images" path="." />
+    <cache-path name="cache" path="." />
+    <external-cache-path name="external_cache" path="." />
+    <external-files-path name="my_images" path="." />
 </paths>
