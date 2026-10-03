@@ -8,7 +8,15 @@ export function toast(message: string, kind: 'info' | 'error' = 'info', ms = 380
     host = h('div', { class: 'toast-host', role: 'status', 'aria-live': 'polite' });
     document.body.appendChild(host);
   }
-  const el = h('div', { class: `toast ${kind === 'error' ? 'error' : ''}` }, message);
+  const el = h(
+    'div',
+    {
+      class: `toast ${kind === 'error' ? 'error' : ''}`,
+      role: kind === 'error' ? 'alert' : 'status',
+      onclick: () => el.remove(),
+    },
+    message,
+  );
   host.appendChild(el);
   setTimeout(() => el.remove(), ms);
 }

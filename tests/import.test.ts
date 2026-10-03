@@ -117,3 +117,27 @@ describe('fájlimport', () => {
     expect(() => importText('kep.png', 'xxxx')).toThrow(/Ismeretlen fájlformátum/);
   });
 });
+
+import { averageFixes, describeGeoError } from '../src/native/geo';
+import { accuracyClass } from '../src/ui/gpsWalk';
+
+describe('GPS-segédfüggvények', () => {
+  it('súlyozott átlag a pontosabb mérés felé húz', () => {
+    const a = averageFixes([
+      { lon: 19, lat: 47, accuracyM: 2, altitudeM: null, headingDeg: null, time: 0 },
+      { lon: 19.001, lat: 47.001, accuracyM: 20, altitudeM: null, headingDeg: null, time: 0 },
+    ])!;
+    expect(a.lon).toBeLessThan(19.0001);
+    expect(a.accuracyM).toBeLessThanOrEqual(2);
+  });
+  it('pontossági osztály a beállított küszöbhöz', () => {
+    expect(accuracyClass(3, 10)).toBe('good');
+    expect(accuracyClass(8, 10)).toBe('mid');
+    expect(accuracyClass(25, 10)).toBe('bad');
+  });
+  it('hibakódok magyar üzenete', () => {
+    expect(describeGeoError({ code: 1, message: '' })).toMatch(/nincs engedélyezve/);
+    expect(describeGeoError({ code: 3, message: '' })).toMatch(/Nem érkezett GPS-jel/);
+    expect(describeGeoError({ message: '' })).toMatch(/Ellenőrizd/);
+  });
+});

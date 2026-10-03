@@ -140,7 +140,7 @@ await check('JRC árvíz RP100 GeoTIFF', async () => {
     .join(' ')}, CORS: ${cors(head)}`;
 });
 
-for (const year of ['2018', '2022']) {
+for (const year of ['2022']) {
   await check(`Lechner ortofotó WMS OI.${year}`, async () => {
     const base = `https://inspire.lechnerkozpont.hu/geoserver/OI.${year}/wms`;
     const res = await get(`${base}?service=WMS&version=1.1.1&request=GetCapabilities`);

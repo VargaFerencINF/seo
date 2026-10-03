@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseColor, recolorDeep, toCss } from '../src/map/colors';
-import { parseWmsLayerNames } from '../src/map/styles';
+import { parseWmsLayerNames, wmsTileUrl } from '../src/map/styles';
 
 describe('színkezelés', () => {
   it('hex, rgb, hsl értelmezése', () => {
@@ -27,5 +27,11 @@ describe('WMS GetCapabilities', () => {
       <Layer queryable="0"><Name>OI.2018:OrthoimageCoverage</Name><Title>Orto</Title></Layer>
       </Layer></Capability></WMT_MS_Capabilities>`;
     expect(parseWmsLayerNames(xml)).toEqual(['OI.2018:OrthoimageCoverage']);
+  });
+  it('GetMap: WMS 1.3.0, crs=EPSG:3857 (a Lechner szerver 1.1.1-re hibát ad)', () => {
+    const u = wmsTileUrl('https://x.test/wms', 'OrthoimageCoverage2022');
+    expect(u).toContain('version=1.3.0');
+    expect(u).toContain('crs=EPSG:3857');
+    expect(u).toContain('bbox={bbox-epsg-3857}');
   });
 });

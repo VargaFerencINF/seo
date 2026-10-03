@@ -9,7 +9,7 @@ export const USER_AGENT = `Teleklato/${APP_VERSION} (Android; ${APP_ID})`;
 
 export const ENDPOINTS = {
   basemapStyle: 'https://tiles.openfreemap.org/styles/liberty',
-  orthoWms: 'https://inspire.lechnerkozpont.hu/geoserver/OI.2018/wms',
+  orthoWms: 'https://inspire.lechnerkozpont.hu/geoserver/OI.2022/wms',
   copernicusDem: 'https://copernicus-dem-30m.s3.amazonaws.com',
   overpass: 'https://overpass-api.de/api/interpreter',
   naturaArcgis:
@@ -29,7 +29,7 @@ export const SOURCES = {
   ortho: {
     id: 'ortho',
     label: 'Ortofotó (Lechner Tudásközpont)',
-    attribution: 'Ortofotó © Lechner Tudásközpont (INSPIRE)',
+    attribution: 'Ortofotó (2022) © Lechner Tudásközpont, INSPIRE nézeti szolgáltatás',
   },
   dem: {
     id: 'dem',

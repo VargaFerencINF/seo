@@ -34,6 +34,8 @@ import type { Screen } from '../shell';
 export interface MapScreenHooks {
   /** további „új telek” műveletek (bejárás, import, koordináta) – a 4. fázis tölti fel */
   extraStartActions: { label: string; icon: string; run: () => void }[];
+  /** fotó-bélyegképek a telek paneljén – a 4. fázis tölti fel */
+  photoStrip?: () => HTMLElement | null;
   /** telek mentése a projektek közé – az 5. fázis tölti fel */
   saveParcel?: (p: Parcel) => Promise<void>;
   /** ha a felhasználó megnyit egy mentett telket */
@@ -300,6 +302,15 @@ export class MapScreen implements Screen {
     if (mode === 'walking') this.onWalkCancelled?.();
   }
 
+  /** Eszköztár-kiegészítők (GPS-bejárás) */
+  toolbarExtra(...nodes: Node[]): void {
+    this.toolbar.setExtra(...nodes);
+  }
+
+  showToolbar(visible: boolean): void {
+    this.toolbar.show(visible);
+  }
+
   /** a 4. fázis GPS-bejárása használja */
   onWalkCancelled?: () => void;
   onWalkFinished?: () => void;
@@ -341,6 +352,7 @@ export class MapScreen implements Screen {
     this.layers.setActive(poly);
     this.showProfiles(session.get().parcel!);
     this.sheet.setState('peek');
+    this.fitParcel(poly);
     void s;
   }
 
@@ -692,6 +704,7 @@ export class MapScreen implements Screen {
       ),
       actions,
       secondary,
+      this.hooks.photoStrip?.() ?? null,
       parcel.analysis
         ? renderResults(parcel.analysis, { demo })
         : h(

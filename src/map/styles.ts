@@ -86,9 +86,13 @@ export function parseWmsLayerNames(xml: string): string[] {
   return names;
 }
 
+/**
+ * WMS 1.3.0 GetMap csempe-URL. A Lechner GeoServer a 1.1.1-es GetMap-re ServiceExceptiont ad,
+ * a 1.3.0 + crs=EPSG:3857 működik (CI próbahívás, 2026-10). EPSG:3857-nél a tengelysorrend x, y.
+ */
 export function wmsTileUrl(baseUrl: string, layer: string): string {
   return (
-    `${baseUrl}?service=WMS&version=1.1.1&request=GetMap&layers=${encodeURIComponent(layer)}` +
-    '&styles=&format=image/jpeg&transparent=false&srs=EPSG:3857&bbox={bbox-epsg-3857}&width=256&height=256'
+    `${baseUrl}?service=WMS&version=1.3.0&request=GetMap&layers=${encodeURIComponent(layer)}` +
+    '&styles=&format=image/jpeg&transparent=false&crs=EPSG:3857&bbox={bbox-epsg-3857}&width=256&height=256'
   );
 }

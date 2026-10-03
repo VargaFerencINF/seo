@@ -51,21 +51,51 @@ export async function currentFix(timeoutMs = 15000): Promise<Fix> {
   return toFix(p);
 }
 
+/**
+ * Folyamatos helykövetés. Időtúllépésnél (nincs új fix) nem jelez hibát – csak ha 30 s-ig semmi
+ * nem jön –, és ugyanazt a hibát legfeljebb 20 s-onként egyszer adja tovább.
+ */
 export async function watchFixes(
   onFix: (f: Fix) => void,
   onError: (msg: string) => void,
 ): Promise<() => void> {
+  let lastFix = Date.now();
+  let lastMsg = '';
+  let lastMsgAt = 0;
   const id = await Geolocation.watchPosition(
-    { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 },
+    { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 },
     (p, err) => {
-      if (err) onError(describeGeoError(err));
-      else if (p) onFix(toFix(p));
+      if (p) {
+        lastFix = Date.now();
+        onFix(toFix(p));
+        return;
+      }
+      if (!err) return;
+      if (geoErrorCode(err) === 3 && Date.now() - lastFix < 30000) return;
+      const msg = describeGeoError(err);
+      if (msg === lastMsg && Date.now() - lastMsgAt < 20000) return;
+      lastMsg = msg;
+      lastMsgAt = Date.now();
+      onError(msg);
     },
   );
   return () => void Geolocation.clearWatch({ id });
 }
 
+function geoErrorCode(err: unknown): number | null {
+  return typeof err === 'object' &&
+    err &&
+    'code' in err &&
+    typeof (err as { code: unknown }).code === 'number'
+    ? (err as { code: number }).code
+    : null;
+}
+
 export function describeGeoError(err: unknown): string {
+  const code = geoErrorCode(err);
+  if (code === 1) return describeGeoError('permission denied');
+  if (code === 2) return describeGeoError('location provider unavailable');
+  if (code === 3) return describeGeoError('timeout');
   const msg =
     err instanceof Error
       ? err.message
@@ -78,7 +108,9 @@ export function describeGeoError(err: unknown): string {
     return 'A telefon helymeghatározása ki van kapcsolva. Kapcsold be a gyorsbeállításokban (Hely / GPS).';
   if (/timeout|timed out/i.test(msg))
     return 'Nem érkezett GPS-jel időben. Menj szabad ég alá, várj néhány másodpercet, és próbáld újra.';
-  return `Helymeghatározási hiba: ${msg}`;
+  return msg.trim()
+    ? `Helymeghatározási hiba: ${msg}`
+    : 'Helymeghatározási hiba. Ellenőrizd, hogy a helymeghatározás be van-e kapcsolva, majd próbáld újra.';
 }
 
 /** Súlyozott átlag (1/pontosság²) – pontrögzítéshez több fix-ből */

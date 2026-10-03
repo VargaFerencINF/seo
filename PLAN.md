@@ -3,19 +3,20 @@
 Jelmagyarázat: ✅ kész · 🔄 folyamatban · ⏳ hátra van · ⚠️ korlátozás / döntés kell
 
 ## Adatforrás-ellenőrzés (2026-10-03)
-A fejlesztői konténer hálózata szűrt; ahol próbahívás nem volt lehetséges, a dokumentáció alapján
-dolgozunk, és az app kezelt hibaállapotot mutat („Nem elérhető adat”), hamis adatot soha.
+A fejlesztői konténer hálózata szűrt, ezért a valódi próbahívások a CI-ben futnak
+(`scripts/check-sources.mjs`, GitHub Actions „Adatforrások” job). Ahol egy forrás nem elérhető,
+az app kezelt hibaállapotot mutat („Nem elérhető adat”), hamis adatot soha.
 
-| Forrás | Végpont | Ellenőrzés | Megjegyzés |
+| Forrás | Végpont | Próbahívás (CI) | Megjegyzés |
 |---|---|---|---|
-| Háttértérkép | OpenFreeMap `https://tiles.openfreemap.org/styles/liberty` | dokumentáció | ingyenes, API-kulcs nélkül, kereskedelmi célra is; OSM-attribúció kötelező. Stílust futásidőben zsályazöldre színezzük. |
-| Ortofotó | Lechner INSPIRE WMS `https://inspire.lechnerkozpont.hu/geoserver/OI.2018/wms` | dokumentáció (INSPIRE Geoportal) | rétegnevet GetCapabilities-ből olvassuk, nem találjuk ki; ha nem érhető el, a réteg kikapcsol hibaüzenettel |
-| Domborzat | Copernicus DEM GLO-30 COG, `copernicus-dem-30m.s3.amazonaws.com` | ✅ próbahívás: 206 Partial Content, **nincs CORS fejléc** → natív HTTP kliens | attribúció: „produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 …” |
-| Közelség | Overpass API `https://overpass-api.de/api/interpreter` | dokumentáció | 2 párhuzamos slot/IP, ~10 000 kérés/nap; sorosítás + cache + 429 kezelés |
-| Natura 2000 | EEA ArcGIS REST `bio.discomap.eea.europa.eu/arcgis/rest/services/ProtectedSites/Natura2000Sites/MapServer` + build-idejű HU GeoJSON (`scripts/build-natura.mjs`) | dokumentáció | réteg-azonosítót a szolgáltatás leírásából olvassuk; a csomagolt GeoJSON-t a script tölti le (EEA GPKG) |
-| Árvíz | JRC EFAS „River flood hazard maps for Europe” v3.1, `jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/CEMS-EFAS/flood_hazard/Europe_RP100_filled_depth.tif` | dokumentáció | ~270 MB GeoTIFF, range request-tel ablak olvasása; ha nem megy: „Nem elérhető adat” |
-| Napelem | PVGIS `https://re.jrc.ec.europa.eu/api/v5_3/PVcalc` | dokumentáció | AJAX/CORS tiltott → CapacitorHttp; aspect: 0 = dél, 90 = nyugat, −90 = kelet |
-| Geokódolás | Nominatim `https://nominatim.openstreetmap.org/search` | dokumentáció | max 1 kérés/s, azonosító User-Agent, nincs autocomplete, cache |
+| Háttértérkép | OpenFreeMap `tiles.openfreemap.org/styles/liberty` | ✅ 111 réteg, CORS `*` | ingyenes, kulcs nélkül, kereskedelmi célra is; OSM-attribúció; futásidőben zsályazöldre színezve |
+| Ortofotó | Lechner INSPIRE WMS `…/geoserver/OI.2022/wms` | ✅ réteg: `OrthoimageCoverage2022`, Fees/AccessConstraints: NONE; **csak WMS 1.3.0 GetMap működik** (1.1.1 → ServiceException); nincs CORS | natív HTTP-protokollon (`nhttps://`) töltjük |
+| Domborzat | Copernicus DEM GLO-30 COG (AWS) | ✅ 3600×3600 px/fok, 1024² csempe, Gödöllő ~207 m; **nincs CORS** | natív range request |
+| Közelség | Overpass API | ✅ CORS `*` | 1 párhuzamos kérés, 1,5 s köz, 429-re visszalépés, cache 30 nap |
+| Natura 2000 | EEA ArcGIS REST, 3 poligonréteg (SCI/SAC, SPA, mindkettő); mezők: SITECODE, SITENAME, MS, SITETYPE | ✅ CORS tükrözött | build-időben HU kivonat: **525 terület, 4,9 MB** (`npm run data:natura`, CI-ben automatikus) |
+| Árvíz | JRC EFAS RP100 `Europe_RP100_filled_depth.tif` | ✅ 110162×51992 px, 256² csempe, nodata −9999, ablakolvasás ~0,6 s; **nincs CORS** | natív range request |
+| Napelem | PVGIS 5.3 PVcalc | ✅ Gödöllő: 5° dél 1076, optimális (39°) 1232 kWh/kWp, SARAH3; **nincs CORS** | küszöbök ehhez kalibrálva |
+| Geokódolás | Nominatim | ✅ CORS `*` | 1 kérés/s, User-Agent, nincs autocomplete, cache |
 
 ## Fázis 1 – Projektváz, Android build üres térképpel ✅
 - [x] CLAUDE.md, PLAN.md
@@ -36,10 +37,28 @@ dolgozunk, és az app kezelt hibaállapotot mutat („Nem elérhető adat”), h
 - [x] bottom sheet eredmények, PDF riport (Barlow TTF, térképkép méretléccel, metszet, lámpák, DEMÓ vízjel)
 - [x] Vitest: 51 teszt (planar, terrain, scoring, demó pipeline, EOV)
 
-## Fázis 3 – Élő adatforrások 🔄
-DEM (COG), Overpass, Natura, PVGIS, árvíz, Nominatim – egyenként, mock-olt HTTP-vel tesztelve.
+## Fázis 3 – Élő adatforrások ✅
+- [x] egységes `DataService` + IndexedDB gyorsítótár (lejárt cache offline tartalék) + kérésütemező
+- [x] Copernicus DEM: COG ablakolvasás natív range requesttel, csempe-mozaik, Workerben EOV-rácsra mintavételezve
+- [x] Overpass: utak (gyalogutak nélkül), légvezeték/földkábel feszültséggel, vízfolyások, épületek (1 km)
+- [x] Natura 2000: csomagolt HU kivonat (offline) → élő EEA ArcGIS (rétegfelderítés, mind a 3 réteg)
+- [x] JRC árvíz RP100: ablakolvasás, átfedés % + max. vízmélység
+- [x] PVGIS: terep szerinti + optimális dőlés, magyar hibaüzenetek (pl. tenger → nem elérhető)
+- [x] Nominatim keresőmező (demó módban helyi keresés), Lechner ortofotó réteg
+- [x] tesztek: szintetikus GeoTIFF range requesttel, mockolt szolgáltatások, élő pipeline + offline cache
+- [x] CI próbahívások minden forrásra (lásd fenti táblázat)
 
-## Fázis 4 – GPS-bejárás, fotók, importok ⏳
-## Fázis 5 – Projektek (SQLite), összehasonlítás, szerkeszthető szabályok ⏳
+## Fázis 4 – GPS-bejárás, fotók, importok ✅
+- [x] engedélykérés előtti magyarázó képernyő (hely, kamera); megtagadásnál konkrét teendő
+- [x] saját pozíció gomb (követés, pontossági kör)
+- [x] GPS-bejárás: pontrögzítés gombnyomásra (több fix súlyozott átlaga), automatikus pontrögzítés 5/10/20/50 m-enként,
+      pontosság kijelzése színkóddal, gyenge jelnél megerősítés; a pontok utólag húzhatók
+- [x] terepi fotó: kamera, GPS-pozíció + iránytű-irány, bélyegkép, app-tárhely; térképi jelölő irány-nyíllal, megtekintés,
+      megjegyzés, törlés; demó módban / 2 km-nél távolabbi felvételnél a telek középpontjához csatolva
+- [x] import: GeoJSON (EPSG:23700 felismerés), KML, DXF (zárt LWPOLYLINE, EOV, tengelycsere-felismerés)
+- [x] Android megosztás/megnyitás intent (saját `SharedFilePlugin`, GeoJSON/KML/DXF MIME-típusok)
+- [x] koordináta-bevitel: WGS84 (tizedes / fok-perc-másodperc) vagy EOV, sorrend-felismerés; 1 pont → odaugrás
+- [x] tesztek: koordináta-parser, GeoJSON/KML/DXF import, GPS-segédfüggvények
+## Fázis 5 – Projektek (SQLite), összehasonlítás, szerkeszthető szabályok 🔄
 ## Fázis 6 – PDF riport, export (GeoJSON/KML), Share ⏳
 ## Fázis 7 – Csiszolás, ikon/splash, release APK, README ⏳
