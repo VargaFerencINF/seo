@@ -32,6 +32,12 @@ function registerNativeProtocol(): void {
 
 export type OverlayFn = (map: MlMap) => void;
 
+export interface MapSnapshot {
+  dataUrl: string;
+  /** a kép szélessége a terepen (m) – méretarányhoz */
+  widthM: number;
+}
+
 export class MapView {
   readonly map: MlMap;
   private overlays = new Map<string, OverlayFn>();
@@ -70,7 +76,7 @@ export class MapView {
   }
 
   whenReady(): Promise<void> {
-    if (this.styleReady && this.map.isStyleLoaded()) return Promise.resolve();
+    if (this.styleReady) return Promise.resolve();
     return new Promise((resolve) => this.readyResolvers.push(resolve));
   }
 
@@ -103,6 +109,48 @@ export class MapView {
 
   removeSource(id: string): void {
     if (this.map.getSource(id)) this.map.removeSource(id);
+  }
+
+  /**
+   * Fekvő tájolású térképkép a telek köré (riporthoz). A telket egy középre igazított, 16:10-es
+   * keretbe illeszti, megvárja a csempéket, majd kivágja a keretet a canvasból.
+   */
+  async snapshotAround(bounds: maplibregl.LngLatBounds, aspect = 1.6): Promise<MapSnapshot> {
+    const map = this.map;
+    const canvas = map.getCanvas();
+    const cw = map.getContainer().clientWidth;
+    const ch = map.getContainer().clientHeight;
+    const boxW = cw;
+    const boxH = Math.min(ch, cw / aspect);
+    const top = (ch - boxH) / 2;
+    map.fitBounds(bounds, {
+      padding: { top: top + 24, bottom: ch - top - boxH + 24, left: 28, right: 28 },
+      maxZoom: 18,
+      duration: 0,
+    });
+    await new Promise<void>((resolve) => {
+      if (map.loaded()) map.once('render', () => resolve());
+      else map.once('idle', () => resolve());
+      map.triggerRepaint();
+    });
+    await new Promise<void>((resolve) => {
+      const t = setTimeout(resolve, 4000);
+      map.once('idle', () => {
+        clearTimeout(t);
+        resolve();
+      });
+      map.triggerRepaint();
+    });
+    const ratio = canvas.width / cw;
+    const out = document.createElement('canvas');
+    out.width = Math.round(boxW * ratio);
+    out.height = Math.round(boxH * ratio);
+    const ctx = out.getContext('2d')!;
+    ctx.drawImage(canvas, 0, Math.round(top * ratio), out.width, out.height, 0, 0, out.width, out.height);
+    const center = map.getCenter();
+    // MapLibre: 512 px-es csempék
+    const mpp = (40075016.686 * Math.cos((center.lat * Math.PI) / 180)) / (512 * 2 ** map.getZoom());
+    return { dataUrl: out.toDataURL('image/png'), widthM: boxW * mpp };
   }
 
   /** Térkép-pillanatkép (PNG data URL) a riporthoz */

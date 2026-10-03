@@ -81,6 +81,15 @@
   position: absolute;
   right: calc(var(--safe-right) + 10px);
   top: calc(var(--safe-top) + 64px);
+  transition: top 0.2s;
+}
+.is-editing .map-controls {
+  top: calc(var(--safe-top) + 190px);
+}
+.is-editing .map-top {
+  display: none;
+}
+.map-controls {
   display: flex;
   flex-direction: column;
   gap: 8px;

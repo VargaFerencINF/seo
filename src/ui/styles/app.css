@@ -51,6 +51,15 @@ small,
 .hidden {
   display: none !important;
 }
+/* ikonok (svg() helper, aria-hidden) alapmérete */
+svg[aria-hidden='true'] {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+.list-item > svg {
+  color: var(--c-primary);
+}
 .sr-only {
   position: absolute;
   width: 1px;
@@ -426,6 +435,11 @@ button:focus-visible {
 .rule-row .grow {
   flex: 1;
 }
+.rule-row .val {
+  font-size: var(--fs-s);
+  font-weight: 600;
+  color: var(--c-text);
+}
 .rule-row .why {
   font-size: var(--fs-xs);
   color: var(--c-text-2);
@@ -492,6 +506,7 @@ button:focus-visible {
   border-radius: 999px;
   box-shadow: var(--shadow-1);
   pointer-events: none;
+  white-space: nowrap;
 }
 .toast-host {
   position: fixed;

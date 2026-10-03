@@ -17,23 +17,26 @@ dolgozunk, és az app kezelt hibaállapotot mutat („Nem elérhető adat”), h
 | Napelem | PVGIS `https://re.jrc.ec.europa.eu/api/v5_3/PVcalc` | dokumentáció | AJAX/CORS tiltott → CapacitorHttp; aspect: 0 = dél, 90 = nyugat, −90 = kelet |
 | Geokódolás | Nominatim `https://nominatim.openstreetmap.org/search` | dokumentáció | max 1 kérés/s, azonosító User-Agent, nincs autocomplete, cache |
 
-## Fázis 1 – Projektváz, Android build üres térképpel 🔄
-- [ ] CLAUDE.md, PLAN.md
-- [ ] Vite + TS strict, ESLint + Prettier, Vitest
-- [ ] Alap UI-keret: alsó navigáció (Térkép / Projektek / Beállítások), téma, betűk
-- [ ] MapLibre térkép (OpenFreeMap, offline esetén üres zsályazöld háttér + üzenet)
-- [ ] Capacitor 8 Android projekt (hu.teleklato.app, „Teleklátó”), minimális engedélyek
-- [ ] Debug APK build
+## Fázis 1 – Projektváz, Android build üres térképpel ✅
+- [x] CLAUDE.md, PLAN.md
+- [x] Vite + TS strict, ESLint + Prettier, Vitest
+- [x] Alap UI-keret: alsó navigáció (Térkép / Projektek / Beállítások), téma, betűk
+- [x] MapLibre térkép (OpenFreeMap, offline esetén üres zsályazöld háttér + üzenet)
+- [x] Capacitor 8 Android projekt (hu.teleklato.app, „Teleklátó”), minimális engedélyek
+- [x] Debug APK build – GitHub Actions (a fejlesztői konténerből a Google Maven nem érhető el)
 
-## Fázis 2 – Demó mód ⏳
-- procedurális domborzat (EOV-ban definiált függvény), folyó, út, falu, légvezeték, Natura poligon
-- 3 mintatelek; terra-draw rajzolás (pont, visszavonás, csúcshúzás, lezárás)
-- elemzési pipeline (async, folyamatjelző, lépésenkénti hibakezelés), DEM Workerben
-- terület/kerület/középpont EOV-ban, magasság, lejtés, kitettség, metszet
-- overlay %, közelség, szimulált PV, pontozás lámpákkal
-- bottom sheet eredmények, egyszerű PDF
+## Fázis 2 – Demó mód ✅
+- [x] procedurális domborzat (EOV-ban definiált függvény), patak, utak, falu, 22 kV-os vezeték, Natura poligon, ártér
+- [x] demó alaptérkép: domborzatárnyékolás + szintvonalak (Workerben), HTML-feliratok (glyph-szerver nélkül)
+- [x] 3 mintatelek: zöld (Napos domboldal), piros (Ártéri rét), sárga (Vezeték alatti északi lejtő)
+- [x] saját csúcsszerkesztő (pont, visszavonás, csúcshúzás, beszúrás felezőponttal, lezárás) – terra-draw helyett, lásd CLAUDE.md
+- [x] elemzési pipeline (async, folyamatjelző, lépésenkénti hibakezelés), DEM Web Workerben
+- [x] terület/kerület/középpont EOV-ban, magasság, lejtés, kitettség (Horn), metszet (átló + felhasználói vonal)
+- [x] overlay % (pontos poligonvágás), közelség, szimulált PV, pontozás lámpákkal
+- [x] bottom sheet eredmények, PDF riport (Barlow TTF, térképkép méretléccel, metszet, lámpák, DEMÓ vízjel)
+- [x] Vitest: 51 teszt (planar, terrain, scoring, demó pipeline, EOV)
 
-## Fázis 3 – Élő adatforrások ⏳
+## Fázis 3 – Élő adatforrások 🔄
 DEM (COG), Overpass, Natura, PVGIS, árvíz, Nominatim – egyenként, mock-olt HTTP-vel tesztelve.
 
 ## Fázis 4 – GPS-bejárás, fotók, importok ⏳

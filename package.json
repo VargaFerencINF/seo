@@ -38,9 +38,7 @@
     "geotiff": "^3.0.5",
     "jspdf": "^4.2.1",
     "maplibre-gl": "^6.11.2",
-    "proj4": "^2.22.0",
-    "terra-draw": "^1.36.0",
-    "terra-draw-maplibre-gl-adapter": "^1.4.1"
+    "proj4": "^2.22.0"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",

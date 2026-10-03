@@ -14,7 +14,7 @@ Az eredmény *előszűrés*: nem helyettesíti a tulajdoni lapot és a helyi ép
 | Build | Vite + TypeScript 6 (strict) | gyors dev, natív ESM, Worker-támogatás |
 | UI | **Vanilla TS** + saját mini komponens-helperek (`src/ui/dom.ts`) és egy kis eseménytároló (`src/state/store.ts`) | 3 képernyő, a nehéz munka a MapLibre-ben és Workerben fut; egy keretrendszer csak méretet és absztrakciót adna a térkép-életciklus fölé. jQuery tilos. |
 | Térkép | MapLibre GL JS | nyílt, vektoros, canvas → PDF kép |
-| Rajzolás | terra-draw + maplibre adapter | csúcs-húzás, lezárás, aktív fejlesztés |
+| Rajzolás | **saját csúcsszerkesztő** (`src/map/editor.ts`) a terra-draw helyett | érintőképernyőn explicit gombok (pont hozzáadása, visszavonás, lezárás) és csúcshúzás kell; ugyanaz a szerkesztő szolgálja ki a GPS-bejárást, a koordináta-bevitelt és a metszetvonalat, közös visszavonási veremmel. A terra-draw egérközpontú (hover-előnézet, első pontra kattintó lezárás), és ~150 kB plusz. |
 | Geometria | Turf.js (bbox, metszés), saját síkbeli függvények EOV-ban (`src/analysis/planar.ts`) | a Turf gömbi/WGS84 méter-számításai helyett **minden méteres számítás EOV-ban** |
 | Vetítés | proj4, EPSG:23700 (EOV) ↔ EPSG:4326 | |
 | Raszter | geotiff.js, COG range request, natív HTTP kliensen át (CORS) | |
@@ -71,6 +71,8 @@ npx cap sync android # web → android
 npm run android:debug  # build + sync + gradlew assembleDebug
 ```
 Sandbox (dl.google.com nélküli) környezetben az SDK: `scripts/ci/bootstrap-android-sdk-sandbox.sh`.
+A Google Maven (dl.google.com) ott sem érhető el, ezért az APK-t a GitHub Actions
+(`.github/workflows/android.yml`) építi; az artifact neve `teleklato-debug-apk`.
 
 ## Fázisok
 1. Projektváz, CLAUDE.md, PLAN.md, Capacitor Android build üres térképpel.
