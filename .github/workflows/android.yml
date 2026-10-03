@@ -1,0 +1,55 @@
+name: Android build
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Függőségek
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tesztek
+        run: npm test
+
+      - name: Web build
+        run: npm run build
+
+      - name: Capacitor sync
+        run: npx cap sync android
+
+      - name: Debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: APK feltöltése
+        uses: actions/upload-artifact@v4
+        with:
+          name: teleklato-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

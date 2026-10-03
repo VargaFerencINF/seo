@@ -1,0 +1,363 @@
+/* ---------- Térkép képernyő ---------- */
+.map-wrap {
+  position: absolute;
+  inset: 0;
+  background: var(--c-bg);
+}
+#map {
+  position: absolute;
+  inset: 0;
+}
+.map-fallback {
+  position: absolute;
+  inset: 0;
+  background-color: var(--c-bg);
+  background-image:
+    linear-gradient(var(--c-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--c-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.map-top {
+  position: absolute;
+  top: calc(var(--safe-top) + 8px);
+  left: calc(var(--safe-left) + 10px);
+  right: calc(var(--safe-right) + 10px);
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+  pointer-events: none;
+}
+.map-top > * {
+  pointer-events: auto;
+}
+.searchbox {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: var(--c-surface);
+  border-radius: var(--r-m);
+  box-shadow: var(--shadow-1);
+  min-height: var(--tap);
+  padding-left: 10px;
+}
+.searchbox input {
+  border: 0;
+  background: transparent;
+  min-height: var(--tap);
+  padding: 0 8px;
+}
+.searchbox input:focus-visible {
+  outline: none;
+}
+.search-results {
+  position: absolute;
+  top: calc(var(--tap) + 6px);
+  left: 0;
+  right: 0;
+  background: var(--c-surface);
+  border-radius: var(--r-m);
+  box-shadow: var(--shadow-1);
+  max-height: 50vh;
+  overflow-y: auto;
+  z-index: 22;
+}
+.search-results button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--c-line);
+  background: transparent;
+  color: var(--c-text);
+  padding: 10px 12px;
+  min-height: var(--tap);
+  font: 400 var(--fs-s) var(--font-body);
+}
+
+.map-controls {
+  position: absolute;
+  right: calc(var(--safe-right) + 10px);
+  top: calc(var(--safe-top) + 64px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 20;
+}
+.map-fab {
+  width: var(--tap);
+  height: var(--tap);
+  border-radius: var(--r-m);
+  border: 0;
+  background: var(--c-surface);
+  color: var(--c-text);
+  box-shadow: var(--shadow-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.map-fab svg {
+  width: 22px;
+  height: 22px;
+}
+.map-fab[aria-pressed='true'] {
+  background: var(--c-primary);
+  color: var(--c-primary-ink);
+}
+.map-fab.locating svg {
+  color: var(--c-accent);
+}
+.map-fab-group {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r-m);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.map-fab-group .map-fab {
+  box-shadow: none;
+  border-radius: 0;
+}
+.map-fab-group .map-fab + .map-fab {
+  border-top: 1px solid var(--c-line);
+}
+
+/* Rajzoló eszköztár */
+.draw-toolbar {
+  position: absolute;
+  left: calc(var(--safe-left) + 10px);
+  right: calc(var(--safe-right) + 10px);
+  z-index: 21;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: var(--c-surface);
+  border-radius: var(--r-l);
+  box-shadow: var(--shadow-1);
+  padding: 8px;
+  align-items: center;
+}
+.draw-toolbar .info {
+  flex: 1 1 100%;
+  font-size: var(--fs-s);
+  color: var(--c-text-2);
+  padding: 0 4px 2px;
+}
+.draw-toolbar .info b {
+  color: var(--c-text);
+}
+.gps-meter {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: var(--fs-s);
+}
+.gps-meter .acc {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.gps-meter .acc.good {
+  color: var(--c-ok);
+}
+.gps-meter .acc.mid {
+  color: var(--c-warn);
+}
+.gps-meter .acc.bad {
+  color: var(--c-bad);
+}
+
+/* ---------- Bottom sheet ---------- */
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 24;
+  background: var(--c-surface);
+  border-radius: var(--r-l) var(--r-l) 0 0;
+  box-shadow: var(--shadow-2);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(calc(100% - var(--sheet-peek, 96px)));
+  transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  height: calc(100% - var(--safe-top) - 56px);
+  max-width: 720px;
+  margin: 0 auto;
+  touch-action: none;
+}
+.sheet.dragging {
+  transition: none;
+}
+.sheet[data-state='half'] {
+  transform: translateY(50%);
+}
+.sheet[data-state='full'] {
+  transform: translateY(0);
+}
+.sheet[data-state='hidden'] {
+  transform: translateY(100%);
+}
+.sheet-handle {
+  flex: none;
+  min-height: var(--tap);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 8px;
+  cursor: grab;
+}
+.sheet-handle::before {
+  content: '';
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--c-line);
+  margin-bottom: 6px;
+}
+.sheet-title {
+  font: 600 var(--fs-m) var(--font-head);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.sheet-title .grow {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px 16px calc(24px + 50%);
+  touch-action: pan-y;
+}
+.sheet[data-state='full'] .sheet-body {
+  padding-bottom: 24px;
+}
+
+/* Térképes markerek */
+.photo-marker {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid var(--c-accent);
+  background: var(--c-surface) center / cover no-repeat;
+  box-shadow: var(--shadow-1);
+  position: relative;
+}
+.photo-marker .dir {
+  position: absolute;
+  left: 50%;
+  top: -14px;
+  width: 0;
+  height: 0;
+  margin-left: -6px;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 10px solid var(--c-accent);
+  transform-origin: 6px 31px;
+}
+.map-label {
+  font: 600 13px var(--font-head);
+  color: #1f3a2b;
+  text-shadow:
+    0 0 3px #fff,
+    0 0 3px #fff,
+    0 0 2px #fff;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.map-label.water {
+  color: #2f6f8f;
+  font-style: italic;
+}
+.map-label.place {
+  font-size: 15px;
+  letter-spacing: 0.04em;
+}
+.vertex-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--c-accent);
+  border: 2px solid #1f3a2b;
+}
+.gps-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #2f80ed;
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.4);
+}
+
+/* MapLibre felülírások */
+.maplibregl-ctrl-attrib {
+  font: 400 11px var(--font-body) !important;
+}
+.maplibregl-ctrl-bottom-right,
+.maplibregl-ctrl-bottom-left {
+  bottom: var(--sheet-peek, 96px) !important;
+}
+.maplibregl-ctrl-scale {
+  border-color: var(--c-text) !important;
+  color: var(--c-text) !important;
+  background: color-mix(in srgb, var(--c-surface) 75%, transparent) !important;
+  font: 600 11px var(--font-body) !important;
+}
+
+/* Metszetdiagram */
+.profile-chart {
+  width: 100%;
+  height: 160px;
+  display: block;
+}
+.profile-chart .grid line {
+  stroke: var(--c-line);
+  stroke-width: 1;
+}
+.profile-chart .axis text {
+  fill: var(--c-text-2);
+  font: 500 10px var(--font-body);
+}
+.profile-chart .area {
+  fill: var(--c-accent-soft);
+}
+.profile-chart .line {
+  fill: none;
+  stroke: var(--c-primary);
+  stroke-width: 2;
+}
+
+/* Összehasonlítás */
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-s);
+}
+.compare-table th,
+.compare-table td {
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--c-line);
+  text-align: left;
+  vertical-align: top;
+}
+.compare-table th {
+  font-family: var(--font-head);
+  font-weight: 600;
+}
+.compare-table td.num {
+  text-align: right;
+}
+.compare-scroll {
+  overflow-x: auto;
+}

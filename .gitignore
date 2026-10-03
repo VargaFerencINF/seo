@@ -1,0 +1,16 @@
+node_modules
+dist
+coverage
+*.log
+.DS_Store
+# Android
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+android/app/release
+android/keystore.properties
+*.jks
+*.keystore
+android/capacitor-cordova-android-plugins/build
+.idea
