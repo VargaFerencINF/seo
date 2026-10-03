@@ -91,7 +91,7 @@ export const pvgisService: DataService<PvRequest, PvMetrics> = {
   async fetchLive(r, ctx) {
     const terrainJ = await call(pvgisUrl(r, false), ctx.signal);
     const t = parsePvgis(terrainJ, r.angleDeg, r.aspectDeg);
-    let optimal: PvVariant | null = null;
+    let optimal: PvVariant | null;
     try {
       optimal = parsePvgis(await call(pvgisUrl(r, true), ctx.signal), 35, 0).v;
     } catch {

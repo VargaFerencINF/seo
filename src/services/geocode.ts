@@ -70,6 +70,6 @@ export async function geocode(query: string, signal?: AbortSignal): Promise<Geoc
   } catch (err) {
     if (hit) return hit.value;
     const d = describeHttpError(err, SOURCES.nominatim.label);
-    throw new Error(`${d.message} ${d.hint}`);
+    throw new Error(`${d.message} ${d.hint}`, { cause: err });
   }
 }
