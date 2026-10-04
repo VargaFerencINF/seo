@@ -14,7 +14,8 @@ android {
         applicationId "hu.teleklato.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // CI-ben a futás sorszáma, hogy minden új build frissítésként települjön
+        versionCode((System.getenv('VERSION_CODE') ?: '1') as Integer)
         versionName "0.1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
