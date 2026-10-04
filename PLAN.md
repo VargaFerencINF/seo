@@ -82,7 +82,7 @@ az app kezelt hibaállapotot mutat („Nem elérhető adat”), hamis adatot soh
 - [x] Android vissza gomb (dialógus → szerkesztés → képernyő → panel → háttérbe)
 - [x] első indításkori üdvözlés módválasztással, globális hibakezelő, koppintással zárható üzenetek
 - [x] kódfelosztás: PDF, importálók, élő szolgáltatások lusta betöltése (fő csomag 2,1 → 1,36 MB)
-- [x] release APK a CI-ben (aláírás GitHub Secrets-ből; titkok nélkül aláíratlan) – ellenőrizve
+- [x] release APK a CI-ben (aláírás GitHub Secrets-ből; titkok nélkül buildenként generált kulccsal) → GitHub Release
 - [x] README: előfeltételek, build, emulátor, aláírt release, telepítés telefonra, hibaelhárítás
 - [x] 106 Vitest teszt, ESLint + Prettier tiszta
 

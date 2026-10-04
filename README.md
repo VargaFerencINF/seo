@@ -132,7 +132,9 @@ Google Play-hez App Bundle kell: `cd android && ./gradlew bundleRelease`.
 **CI-ben:** add meg a repó *Settings → Secrets and variables → Actions* alatt:
 `ANDROID_KEYSTORE_BASE64` (`base64 -w0 teleklato-release.jks`), `ANDROID_KEYSTORE_PASSWORD`,
 `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Ezután *Actions → Android build → Run workflow* (vagy egy
-`v*` tag) aláírt `teleklato-release-apk` artifactot készít. Titkok nélkül aláíratlan release APK épül.
+`v*` tag) aláírt release APK-t készít, és GitHub Release-ként közzéteszi. Titkok nélkül a CI
+buildenként új kulcsot generál: az APK így is kiadási (nem debug) aláírást kap, de a frissítéshez
+előbb el kell távolítani az előzőt.
 
 ## Telepítés telefonra
 
